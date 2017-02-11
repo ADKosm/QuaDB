@@ -22,10 +22,14 @@ public final class Consts {
     public static final List<Pattern> QUERY_COMMANDS =
             Arrays.asList(Pattern.compile("select [a-z0-9\\*,]+ from [a-z0-9]+"));
 
-    public static final Integer CONTROL_COMMAND = 0;
-    public static final Integer DDL_COMMAND = 1;
-    public static final Integer DML_COMMAND = 2;
-    public static final Integer UNKNOWN_COMMAND = -1;
+    public static final int CONTROL_COMMAND = 0;
+    public static final int DDL_COMMAND = 1;
+    public static final int DML_COMMAND = 2;
+    public static final int UNKNOWN_COMMAND = -1;
+
+    public static final int SHOW_TABLES = 0;
+    public static final int DESCRIBE_TABLE = 1;
+    public static final int SHOW_ROWS = 2;
 
     public static final int STATUS_COMMAND_UNKNOWN = -1;
     public static final int STATUS_COMMAND_EXIT = -2;

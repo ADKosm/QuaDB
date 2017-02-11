@@ -4,9 +4,11 @@ import dbms.schema.Row;
 import dbms.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 public class QueryResult {
-    private ArrayList<Schema> schema = new ArrayList<Schema>();
+    private ArrayList<Schema> schemas = new ArrayList<Schema>();
+    private Schema schema;
     private ArrayList<Row> results = new ArrayList<Row>();
     private int rowsNumber = 0;
 
@@ -18,12 +20,12 @@ public class QueryResult {
         return results;
     }
 
-    public void setSchema(ArrayList<Schema> schema) {
-        this.schema = schema;
+    public void setSchemas(ArrayList<Schema> schemas) {
+        this.schemas = schemas;
     }
 
-    public ArrayList<Schema> getSchema() {
-        return schema;
+    public ArrayList<Schema> getSchemas() {
+        return schemas;
     }
 
     public void setRowsNumber(int rowsNumber) {
@@ -32,5 +34,13 @@ public class QueryResult {
 
     public int getRowsNumber() {
         return rowsNumber;
+    }
+
+    public Schema getSchema() {
+        return schema;
+    }
+
+    public void setSchema(Schema schema) {
+        this.schema = schema;
     }
 }

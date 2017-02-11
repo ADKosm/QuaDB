@@ -6,6 +6,7 @@ public class Schema {
     private ArrayList<Column> columns;
     private String schemaFilePath;
     private String dataFilePath;
+    private String tableName;
 
     public Schema(ArrayList<Column> columns) {
         this.columns = columns;
@@ -33,5 +34,13 @@ public class Schema {
 
     public String getSchemaFilePath() {
         return schemaFilePath;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 }

@@ -1,9 +1,13 @@
 package dbms.schema;
 
+import dbms.Consts;
+
+import java.util.HashMap;
+
 public class Column {
     private String name;
     private int type;
-    private int size;
+    private int size = 0;
 
     public Column(String name, int type){
         this.name = name;
@@ -38,5 +42,18 @@ public class Column {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String toString() {
+        HashMap<Integer, String> typesMap = new HashMap<Integer, String>();
+        typesMap.put(Consts.COLUMN_TYPE_INTEGER, "int");
+        typesMap.put(Consts.COLUMN_TYPE_VARCHAR, "varchar");
+        typesMap.put(Consts.COLUMN_TYPE_DATETIME, "datetime");
+
+        String result = size == 0 ?
+                " " + name + " [ " + typesMap.get(type) + " ] " :
+                " " + name + " [ " + typesMap.get(type) + " ( " + Integer.toString(size) + " ) ] ";
+
+        return result;
     }
 }

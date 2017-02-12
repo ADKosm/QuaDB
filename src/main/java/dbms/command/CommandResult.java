@@ -50,6 +50,7 @@ public class CommandResult {
                 result += queryResult.getSchema().getTableName() + "\n" + queryResult.getSchema().getColumns().stream().map(Column::toString).collect(Collectors.joining("|"));
                 break;
             case Consts.SHOW_ROWS:
+                result += queryResult.getResults().stream().map(Row::toString).collect(Collectors.joining("\n"));
                 break;
         }
 

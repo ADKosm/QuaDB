@@ -22,7 +22,7 @@ public class RequestHandler {
             String userResponse;
 
             CommandManager commandManager;
-            SchemaManager schemaManager = new SchemaManager();
+            SchemaManager schemaManager = SchemaManager.getInstance();
             QueryManager queryManager = new QueryManager();
 
             CommandResult commandResult;

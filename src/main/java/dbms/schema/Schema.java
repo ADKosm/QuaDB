@@ -1,6 +1,9 @@
 package dbms.schema;
 
+import dbms.schema.dataTypes.Cell;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class Schema {
     private ArrayList<Column> columns;
@@ -42,5 +45,25 @@ public class Schema {
 
     public void setTableName(String tableName) {
         this.tableName = tableName;
+    }
+
+    public Integer getRowSize() {
+        Integer result = 0;
+        for(Column column : columns) {
+            result += column.getByteSize();
+        }
+        result += 1; // byte for alive flag
+        return result;
+    }
+
+    public Row valuesToRow(List<String> values) throws Exception {
+        if(values.size() != columns.size()) {
+            throw new Exception("Incorrect shape of values"); // TODO: add NULL as value
+        }
+        List<Cell> cells = new ArrayList<Cell>();
+        for(int i = 0; i < values.size(); i++) {
+            cells.add(columns.get(i).createCell(values.get(i)));
+        }
+        return new Row(cells);
     }
 }

@@ -18,9 +18,11 @@ public final class Consts {
     public static final String COMMAND_EXIT = "exit";
     public static final List<Pattern> CONTROL_COMMANDS = Collections.singletonList(Pattern.compile(COMMAND_EXIT));
     public static final List<Pattern> SCHEMA_COMMANDS =
-            Arrays.asList(Pattern.compile("show tables"), Pattern.compile("describe table [a-z0-9]+"));
+            Arrays.asList(Pattern.compile("show tables"),
+                    Pattern.compile("describe table [a-z0-9]+"));
     public static final List<Pattern> QUERY_COMMANDS =
-            Arrays.asList(Pattern.compile("select [a-z0-9\\*,]+ from [a-z0-9]+"));
+            Arrays.asList(Pattern.compile("select [a-z0-9\\*,]+ from [a-z0-9]+"),
+                    Pattern.compile("insert into [a-zA-Z0-9]+ values \\(.+\\)"));
 
     public static final int CONTROL_COMMAND = 0;
     public static final int DDL_COMMAND = 1;
@@ -35,6 +37,9 @@ public final class Consts {
     public static final int STATUS_COMMAND_EXIT = -2;
     public static final int STATUS_COMMAND_OK = 0;
     public static final int STATUS_COMMAND_ERROR = 1;
+
+    // Operations
+    public static final int FULL_SCAN = 0;
 
     // Messages
     public static final String MESSAGE_WARNING_UNKNOWN_COMMAND = "Unknown command: ";

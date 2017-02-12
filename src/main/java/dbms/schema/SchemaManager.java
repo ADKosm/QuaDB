@@ -16,10 +16,17 @@ import java.util.regex.Pattern;
 
 public class SchemaManager {
 
+    public static final SchemaManager instance = new SchemaManager();
+    public static SchemaManager getInstance() { return instance; }
+
     private String shemaRoot;
     private HashMap<String, Schema> structure;
     private HashMap<String, Integer> typesMap;
     private Pattern metaPattern;
+
+    public Schema getSchema(String tableName) {
+        return structure.get(tableName);
+    }
 
     private void loadScheme(File table) throws Exception {
         ArrayList<Column> colums = new ArrayList<Column>();
@@ -28,7 +35,7 @@ public class SchemaManager {
             String[] data = line.split(";");
             colums.add(
                     data.length == 3 ?
-                    new Column(data[0], typesMap.get(data[1]), Integer.parseInt(data[2])) :
+                    new Column(data[0], typesMap.get(data[1]), Byte.parseByte(data[2])) :
                     new Column(data[0], typesMap.get(data[1]))
             );
         }
@@ -47,7 +54,6 @@ public class SchemaManager {
     }
 
     public SchemaManager() {
-        // TODO load schema to RAM
         structure = new HashMap<String, Schema>();
         typesMap = new HashMap<String, Integer>();
         typesMap.put("int", Consts.COLUMN_TYPE_INTEGER);

@@ -6,7 +6,7 @@ Therefore, to use this DB, you need to create in /tmp/simpledb at least 2 files:
  In tableName.meta you must write scheme of tableName, for example:
  
  ```
- id;int
+id;int
 name;varchar;10
 dt;datetime
 ```

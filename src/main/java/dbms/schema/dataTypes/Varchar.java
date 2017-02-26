@@ -4,11 +4,19 @@ import java.nio.MappedByteBuffer;
 
 public class Varchar implements Cell {
     private String value;
-    private byte size;
+    private byte size; // max size
 
     public Varchar(String v, byte s) {
         value = v;
         size = s;
+    }
+
+    public static Varchar readVarchar(MappedByteBuffer buffer, byte s) {
+        byte len = buffer.get();
+        byte[] bytes = new byte[len];
+        buffer.get(bytes);
+        String value = new String(bytes);
+        return new Varchar(value, s);
     }
 
     public String toString() {
@@ -35,8 +43,12 @@ public class Varchar implements Cell {
     public void writeCell(MappedByteBuffer buffer) {
         byte[] bytes = value.getBytes();
 
-        buffer.put(Byte.parseByte(Integer.toString(value.length()))); // TODO: change to more clever method
+        buffer.put(Byte.parseByte(Integer.toString(bytes.length))); // TODO: change to more clever method
         buffer.put(bytes);
-        for(int i = value.length(); i < size; i++) buffer.put((byte)0);
+    }
+
+    @Override
+    public short getByteSize() {
+        return (short)(value.length() + 1);
     }
 }

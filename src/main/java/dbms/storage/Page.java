@@ -5,76 +5,74 @@ import dbms.schema.Column;
 import dbms.schema.Row;
 import dbms.schema.Schema;
 import dbms.schema.dataTypes.Cell;
-import dbms.schema.dataTypes.Int;
 
 import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 /**Head:
- * | recordCount | recordSize | data |
+ * | Free space | Record count | Shift table | 0 | ... | data |
  * Record : | liveFlag | data |
  * liveFlag == 0 => record is dead
  * liveFlag == 1 => record is alive
+ *
+ * Shift table consists of short (2 bytes) values, which is a position of records in page
+ *
+ * After inserting\removing:
+ * * Update liveFlag
+ * * Update record in shift table
+ * * Update Free Space
+ * * Update Record Count
+ *
+ * By now deleted record are still take up space in page
+ * In future, there should be an defragmentation operation, which must reconstruct page with a lot of dead records
+ * But we have to call this operation quite rare, cause it will modify data on hard disk, indexes, and thats why is
+ * is very expensive
  */
 
 public class Page {
-    private Integer recordSize;
+    private Integer freeSpace;
     private Integer recordCount;
-    private Integer headSize = 2 * 4; // 2 * sizeof(int)
+    private Integer shiftTable = 2 * 4; // 2 * sizeof(int) = position of shift table
 
     private MappedByteBuffer buffer;
 
     public Page(MappedByteBuffer b) {
         buffer = b;
+        freeSpace = buffer.getInt();
         recordCount = buffer.getInt();
-        recordSize = buffer.getInt();
     }
 
     public static Page createPage(MappedByteBuffer b, Schema schema) {
         Integer rCount = 0;
-        Integer rSize = schema.getRowSize();
+        Integer fSpace = Consts.BLOCK_SIZE - 4 - 4 - 1;
+        //  Free space = Page size - |Free space| - |Record count| - |zero|
+        b.putInt(fSpace);
         b.putInt(rCount);
-        b.putInt(rSize);
 
-        while(b.remaining() > 0) b.put((byte) 0); // TODO: change to more clever method
+        while(b.remaining() > 0) b.put((byte) 0); // clear page
 
         b.position(0);
 
         return new Page(b);
     }
 
-    public Integer getRecordSize() {
-        return recordSize;
-    }
-
-    public void setRecordSize(Integer recordSize) {
-        this.recordSize = recordSize;
-    }
-
-    public Integer getRecordCount() {
-        return recordCount;
-    }
-
-    public void setRecordCount(Integer recordCount) {
-        this.recordCount = recordCount;
-    }
-
     public List<Row> toRows(Schema schema) {
         try{
             List<Row> rows = new ArrayList<Row>();
-            while(buffer.remaining() >= recordSize) {
+            for(int i = shiftTable; i < shiftTable + recordCount * 2; i += 2) {
+                short pos = buffer.getShort(i);
+                buffer.position(pos);
                 boolean deleted = (buffer.get() == 0);
+                if(deleted) continue;
 
                 List<Cell> cells = new ArrayList<Cell>();
-                for(Column column : schema.getColumns()){
+                for(Column column : schema.getColumns()) {
                     cells.add(column.readCell(buffer));
                 }
-
-                if(deleted) continue; // TODO: change useless reading to position changing
                 rows.add(new Row(cells));
             }
-            buffer.position(headSize);
+            buffer.position(shiftTable);
             return rows;
         } catch (Exception e) {
             e.fillInStackTrace();
@@ -82,28 +80,32 @@ public class Page {
         }
     }
 
-    public boolean isFull() {
-        Integer available = (Consts.BLOCK_SIZE - headSize) / recordSize;
-        return recordCount >= available;
+    public boolean canPlaced(Row row) {
+        return freeSpace >= row.getRowSize() + 2; // |row| + |record in shift table|
     }
 
     public void insertValues(Row row) {
-        for(int i = headSize; buffer.remaining() >= recordSize; i += recordSize) {
-            buffer.position(i);
-            boolean deleted = (buffer.get() == 0);
-            if(deleted) {
-                buffer.position(i);
-                buffer.put((byte) 1); // alive
-                for(Cell cell : row.getCells()) {
-                    cell.writeCell(buffer);
-                }
-                recordCount++;
-
-                buffer.position(0);
-                buffer.putInt(recordCount);
-                buffer.position(headSize);
-                break;
-            }
+        short newPosition;
+        if(recordCount == 0) {
+            newPosition = (short)(Consts.BLOCK_SIZE - row.getRowSize());
+        } else {
+            buffer.position(shiftTable + recordCount * 2 - 2); // last record in shift table
+            newPosition = (short)(buffer.getShort() - row.getRowSize());
         }
+        // write new position in shift table
+        buffer.position(shiftTable + recordCount * 2);
+        buffer.putShort(newPosition);
+        // write data in new position
+        buffer.position(newPosition);
+        buffer.put((byte) 1); //alive
+        for(Cell cell : row.getCells()) {
+            cell.writeCell(buffer);
+        }
+        // update record count and free space
+        recordCount++;
+        freeSpace -= row.getRowSize() + 2; // |row| + |record in shift table|
+        buffer.position(0);
+        buffer.putInt(freeSpace);
+        buffer.putInt(recordCount);
     }
 }

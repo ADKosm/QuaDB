@@ -47,15 +47,6 @@ public class Schema {
         this.tableName = tableName;
     }
 
-    public Integer getRowSize() {
-        Integer result = 0;
-        for(Column column : columns) {
-            result += column.getByteSize();
-        }
-        result += 1; // byte for alive flag
-        return result;
-    }
-
     public Row valuesToRow(List<String> values) throws Exception {
         if(values.size() != columns.size()) {
             throw new Exception("Incorrect shape of values"); // TODO: add NULL as value

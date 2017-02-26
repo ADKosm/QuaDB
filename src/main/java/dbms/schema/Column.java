@@ -26,42 +26,6 @@ public class Column {
         this.size = size;
     }
 
-    public byte getSize() {
-        return size;
-    }
-
-    public void setSize(byte size) {
-        this.size = size;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public void setType(int type) {
-        this.type = type;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getByteSize() {
-        switch (type) {
-            case Consts.COLUMN_TYPE_INTEGER:
-                return 4; // sizeof(int)
-            case Consts.COLUMN_TYPE_VARCHAR:
-                return (int)size + 1; // len + size bytes
-            case Consts.COLUMN_TYPE_DATETIME:
-                return 8; // sizeof(long)
-        }
-        return 0;
-    }
-
     public String toString() {
         HashMap<Integer, String> typesMap = new HashMap<Integer, String>();
         typesMap.put(Consts.COLUMN_TYPE_INTEGER, "int");
@@ -78,15 +42,11 @@ public class Column {
     public Cell readCell(MappedByteBuffer buffer) throws Exception {
         switch (type) {
             case Consts.COLUMN_TYPE_INTEGER:
-                return new Int(buffer.getInt());
+                return Int.readInt(buffer);
             case Consts.COLUMN_TYPE_DATETIME:
-                return new Datetime(buffer.getLong());
+                return Datetime.readDatetime(buffer);
             case Consts.COLUMN_TYPE_VARCHAR:
-                byte len = buffer.get();
-                byte[] bytes = new byte[size];
-                for(int i = 0; i < size; i++) bytes[i] = buffer.get();
-                String value = new String(bytes).substring(0, len);
-                return new Varchar(value, len);
+                return Varchar.readVarchar(buffer, size);
         }
         throw new Exception("Unknown column type");
     }

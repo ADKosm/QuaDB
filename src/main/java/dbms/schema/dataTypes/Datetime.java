@@ -19,6 +19,11 @@ public class Datetime implements Cell {
         value = v;
     }
 
+    public static Datetime readDatetime(MappedByteBuffer buffer) {
+        return new Datetime(buffer.getLong());
+    }
+
+    @Override
     public String toString() {
         /*
         from Instant.now().getEpochSecond();
@@ -29,5 +34,10 @@ public class Datetime implements Cell {
     @Override
     public void writeCell(MappedByteBuffer buffer) {
         buffer.putLong(value);
+    }
+
+    @Override
+    public short getByteSize() {
+        return 8; // sizeof(long)
     }
 }

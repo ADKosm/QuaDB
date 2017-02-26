@@ -1,6 +1,5 @@
 package dbms.query;
 
-import dbms.Consts;
 import dbms.query.Operations.FullScanOperation;
 import dbms.query.Operations.InsertOperation;
 import dbms.query.Operations.Operation;
@@ -56,13 +55,13 @@ public class Computator {
     private void insertValues(String table, List<String> values) {
         try{
             Schema schema = schemaManager.getSchema(table);
+            Row row = schema.valuesToRow(values);
 
             Page page = bufferManager.getLastPage(schema.getDataFilePath());
-            if(page == null || page.isFull()) {
+
+            if(page == null || !page.canPlaced(row)) {
                 page = bufferManager.allocateNewPage(schema);
             }
-
-            Row row = schema.valuesToRow(values);
 
             page.insertValues(row);
 

@@ -10,6 +10,10 @@ public class Int implements Cell {
         value = v;
     }
 
+    public static Int readInt(MappedByteBuffer buffer) {
+        return new Int(buffer.getInt());
+    }
+
     public String toString() {
         return value.toString();
     }
@@ -25,5 +29,10 @@ public class Int implements Cell {
     @Override
     public void writeCell(MappedByteBuffer buffer) {
         buffer.putInt(value);
+    }
+
+    @Override
+    public short getByteSize() {
+        return 4; // sizeof(int)
     }
 }

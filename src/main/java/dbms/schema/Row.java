@@ -20,6 +20,15 @@ public class Row {
         this.cells = cells;
     }
 
+    public short getRowSize() {
+        short result = 0;
+        for(Cell cell : cells) {
+            result += cell.getByteSize();
+        }
+        result += 1; // byte for alive flag
+        return result;
+    }
+
     public String toString() {
         return cells.stream().map(Cell::toString).collect(Collectors.joining("|"));
     }

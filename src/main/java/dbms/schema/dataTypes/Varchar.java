@@ -51,4 +51,18 @@ public class Varchar implements Cell {
     public short getByteSize() {
         return (short)(value.length() + 1);
     }
+
+    @Override
+    public int compareTo(Cell other) {
+        if(other instanceof Varchar) {
+            return value.compareTo(((Varchar) other).getValue());
+        } else {
+            return 0; // TODO: show error
+        }
+    }
+
+    @Override
+    public int compareTo(String other) {
+        return value.compareTo(other);
+    }
 }

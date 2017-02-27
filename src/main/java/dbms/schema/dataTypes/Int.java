@@ -35,4 +35,23 @@ public class Int implements Cell {
     public short getByteSize() {
         return 4; // sizeof(int)
     }
+
+    @Override
+    public int compareTo(Cell other) {
+        if(other instanceof Int) {
+            return value - ((Int)other).getValue();
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
+    public int compareTo(String other) {
+        try {
+            Integer otherInt = Integer.parseInt(other);
+            return value - otherInt;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 }

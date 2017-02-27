@@ -14,10 +14,17 @@ public class QueryManager {
         commandResult.setStatus(Consts.STATUS_COMMAND_OK);
 
         QueryPlan queryPlan = new QueryPlan(query);
-        BufferManager bufferManager = BufferManager.getInstance();
 
-        commandResult.setQueryResult(bufferManager.executeQuery(queryPlan));
+        QueryResult result = executeQuery(queryPlan);
+
+        commandResult.setQueryResult(result);
         commandResult.setType(Consts.SHOW_ROWS);
         return commandResult;
+    }
+
+    public QueryResult executeQuery(QueryPlan queryPlan) {
+        Computator computator = new Computator(queryPlan);
+        computator.runOperations();
+        return computator.getResult();
     }
 }

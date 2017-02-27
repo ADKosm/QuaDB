@@ -2,6 +2,7 @@ package dbms.query;
 
 import dbms.schema.Row;
 import dbms.schema.Schema;
+import dbms.storage.table.Table;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,6 +11,7 @@ public class QueryResult {
     private ArrayList<Schema> schemas = new ArrayList<Schema>();
     private Schema schema;
     private ArrayList<Row> results = new ArrayList<Row>();
+    private Table resultTable;
     private int rowsNumber = 0;
 
     public void setResults(ArrayList<Row> results) {
@@ -42,5 +44,13 @@ public class QueryResult {
 
     public void setSchema(Schema schema) {
         this.schema = schema;
+    }
+
+    public Table getResultTable() {
+        return resultTable;
+    }
+
+    public void setResultTable(Table resultTable) {
+        this.resultTable = resultTable;
     }
 }

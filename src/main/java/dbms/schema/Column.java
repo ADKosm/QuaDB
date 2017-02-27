@@ -39,6 +39,10 @@ public class Column {
         return result;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public Cell readCell(MappedByteBuffer buffer) throws Exception {
         switch (type) {
             case Consts.COLUMN_TYPE_INTEGER:

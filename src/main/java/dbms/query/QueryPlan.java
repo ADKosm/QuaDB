@@ -1,29 +1,29 @@
 package dbms.query;
 
-import dbms.Consts;
-import dbms.query.Operations.FullScanOperation;
-import dbms.query.Operations.InsertOperation;
-import dbms.query.Operations.Operation;
+import dbms.query.Operations.*;
+import dbms.schema.Column;
+import dbms.schema.Schema;
+import dbms.storage.StorageManager;
+import dbms.storage.table.Table;
+import javafx.scene.control.Tab;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class QueryPlan {
-    private ArrayList<Operation> operations;
+    private StorageManager storageManager = StorageManager.getInstance();
+    private List<Object> plan = new ArrayList<>();
 
     public QueryPlan(String query) {
-        operations = new ArrayList<Operation>();
-
-        if(Pattern.matches("select [a-z0-9\\*,]+ from [a-z0-9]+", query)) {
-            Matcher m = Pattern.compile("select ([a-z0-9\\*,]+) from ([a-z0-9]+)").matcher(query);
+        if(Pattern.matches("select [a-z0-9\\*,]+ from [a-z0-9]+( where .+)*", query)) {
+            Matcher m = Pattern.compile("select ([a-z0-9\\*,]+) from ([a-z0-9]+)( where (.+))*").matcher(query);
             if(m.find()) {
                 String fields = m.group(1); // TODO: add filtering
                 String tableName = m.group(2);
+                String rawPredicate = m.group(4) == null ? "True" : m.group(4);
 
-                operations.add(new FullScanOperation(tableName, "True")); // TODO: add predicate
+                buildSelectPlan(rawPredicate, tableName);
             }
         } else if(Pattern.matches("insert into [a-zA-Z0-9]+ values \\(.+\\)", query)) { // TODO: improve regexp
             Matcher m = Pattern.compile("insert into ([a-zA-Z0-9]+) values \\((.+)\\)").matcher(query);
@@ -31,20 +31,139 @@ public class QueryPlan {
                 String tableName = m.group(1);
                 String[] vs = m.group(2).split(",");
                 List<String> values = new ArrayList<String>(Arrays.asList(vs));
-                operations.add(new InsertOperation(tableName, values));
+
+                buildInsertPlan(values, tableName);
             }
         }
     }
 
-    public void setOperations(ArrayList<Operation> operations) {
-        this.operations = operations;
+    public List<Object> getPlan() {
+        return plan;
     }
 
-    public ArrayList<Operation> getOperations() {
-        return operations;
+    private void buildSelectPlan(String rawPredicate, String tableName) {
+        Pattern lexemPattern = Pattern.compile("(and|\\(|\\)|<|>|=|or|[0-9]+|[A-Za-z0-9_]+)\\s*");
+        List<String> lexems = new ArrayList<>();
+        Matcher m = lexemPattern.matcher(rawPredicate);
+        while (m.find()) lexems.add(m.group(1));
+
+        Table table = storageManager.getTable(tableName);
+
+        ShuntingYard parser = new ShuntingYard(lexems, table);
+        parser.run();
+
+        optimizePlan();
     }
 
-    private void addOperation(Operation operation) {
-        this.operations.add(operation);
+    private void optimizePlan() {
+        // TODO: optimize query plan using relation algebra and indexes
+        PlanOptimizer planOptimizer = new PlanOptimizer();
+        planOptimizer.precomputeConstantPredicateStatement();
+    }
+
+    private void buildInsertPlan(List<String> values, String tableName) {
+        plan.add(values);
+        plan.add(storageManager.getTable(tableName));
+        plan.add(new InsertOperation());
+    }
+
+
+    public class ShuntingYard {
+        private HashMap<String, Integer> priority = new HashMap<>();
+        Stack<String> operators = new Stack<>();
+
+        private List<String> lexems;
+        private Table table;
+
+        public ShuntingYard(List<String> lexems, Table table) {
+            this.lexems = lexems;
+            this.table = table;
+
+            priority.put("(", 0);
+            priority.put(")", 0);
+            priority.put("and", 1);
+            priority.put("or", 1);
+            priority.put("<", 2);
+            priority.put(">", 2);
+            priority.put("=", 2);
+            priority.put("True", 2);
+            priority.put("False", 2);
+        }
+
+        public void run() {
+            Iterator<String> it = lexems.iterator();
+            while (it.hasNext()) {
+                String current = it.next();
+
+                if(priority.containsKey(current)) { // operator or bracket
+                    if(current.equals("(")) {
+                        operators.push(current);
+                        continue;
+                    }
+                    if(current.equals(")")) {
+                        while(!operators.peek().equals("(")) {
+                            addOperator(operators.pop());
+                        }
+                        operators.pop();
+                        continue;
+                    }
+
+                    while (!operators.empty() && priority.get(current) <= priority.get(operators.peek())) { // while proiroty is greater
+                        addOperator(operators.pop());
+                    }
+                    operators.push(current);
+                } else { // number or column
+                    addValue(current);
+                }
+            }
+            while (!operators.empty()) {
+                addOperator(operators.pop());
+            }
+        }
+
+        private void addOperator(String operator) {
+            if(priority.get(operator) == 2) { // < > = True False
+                plan.add(table);
+                plan.add(new FullScanOperation(new Predicate(operator)));
+            }
+            if(operator.equals("and")) {
+                plan.add(new IntersectionOperation());
+            }
+            if(operator.equals("or")) {
+                plan.add(new UnionOperation());
+            }
+        }
+
+        private void addValue(String value) {
+            try {
+                Column column = table.getSchema().getColumn(value);
+                plan.add(column);
+            } catch (Exception e) {
+                plan.add(value);
+            }
+        }
+    }
+
+    public class PlanOptimizer {
+        public void precomputeConstantPredicateStatement() {
+            for(int i = 0; i < plan.size(); i++) {
+                if(plan.get(i) instanceof FullScanOperation) {
+                    FullScanOperation scan = (FullScanOperation) plan.get(i);
+                    if(scan.getPredicate().getOperator().equals("True")) {
+                        plan.remove(i);
+                        i--;
+                        continue;
+                    }
+                    if(scan.getPredicate().getOperator().equals("False")) {
+                        Schema schema = ((Table) plan.get(i-1)).getSchema();
+                        plan.set(i-1, new Table(schema)); // empty table
+                        plan.remove(i);
+                        i--;
+                        continue;
+                    }
+                }
+            }
+        }
     }
 }
+

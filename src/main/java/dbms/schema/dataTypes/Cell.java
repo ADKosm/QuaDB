@@ -8,4 +8,7 @@ public interface Cell {
     void writeCell(MappedByteBuffer buffer);
 
     short getByteSize();
+
+    int compareTo(Cell other);
+    int compareTo(String other);
 }

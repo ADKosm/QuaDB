@@ -21,7 +21,7 @@ public final class Consts {
             Arrays.asList(Pattern.compile("show tables"),
                     Pattern.compile("describe table [a-z0-9]+"));
     public static final List<Pattern> QUERY_COMMANDS =
-            Arrays.asList(Pattern.compile("select [a-z0-9\\*,]+ from [a-z0-9]+"),
+            Arrays.asList(Pattern.compile("select [a-z0-9\\*,]+ from [a-z0-9]+( where .+)*"),
                     Pattern.compile("insert into [a-zA-Z0-9]+ values \\(.+\\)"));
 
     public static final int CONTROL_COMMAND = 0;
@@ -52,4 +52,6 @@ public final class Consts {
     public static final int COLUMN_TYPE_VARCHAR = 2;
     public static final int COLUMN_TYPE_DATETIME = 3;
     public enum COLUMN_TYPES {COLUMN_TYPE_INTEGER, COLUMN_TYPE_VARCHAR, COLUMN_TYPE_DATETIME};
+
+    public static final int MAX_MEMORY_USED = 4096 * 2; // 2 pages | TODO: increase in future
 }

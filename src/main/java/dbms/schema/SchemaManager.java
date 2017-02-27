@@ -3,6 +3,7 @@ package dbms.schema;
 import dbms.Consts;
 import dbms.command.CommandResult;
 import dbms.query.QueryResult;
+import dbms.storage.StorageManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,7 +20,10 @@ public class SchemaManager {
     public static final SchemaManager instance = new SchemaManager();
     public static SchemaManager getInstance() { return instance; }
 
+    private StorageManager storageManager = StorageManager.getInstance();
+
     private String shemaRoot;
+    private String tempRoot;
     private HashMap<String, Schema> structure;
     private HashMap<String, Integer> typesMap;
     private Pattern metaPattern;
@@ -51,6 +55,8 @@ public class SchemaManager {
             throw new Exception("Impossible situation");
         }
         structure.put(tableName, schema);
+
+        storageManager.loadTable(schema);
     }
 
     public SchemaManager() {
@@ -61,6 +67,17 @@ public class SchemaManager {
         typesMap.put("datetime", Consts.COLUMN_TYPE_DATETIME);
 
         this.shemaRoot = Consts.SCHEMA_ROOT_PATH;
+        this.tempRoot = this.shemaRoot + "/.qua_temp";
+
+        File tempDir = new File(this.tempRoot);
+        if(!tempDir.exists()) {
+            try {
+                tempDir.mkdir();
+            } catch (Exception e) {
+                e.fillInStackTrace();
+            }
+        }
+
         metaPattern = Pattern.compile("[a-zA-Z0-9]+\\.meta$");
 
         try{
@@ -101,5 +118,13 @@ public class SchemaManager {
         }
 
         return commandResult;
+    }
+
+    public String getTempRoot() {
+        return tempRoot;
+    }
+
+    public void setTempRoot(String tempRoot) {
+        this.tempRoot = tempRoot;
     }
 }

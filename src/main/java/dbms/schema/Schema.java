@@ -11,6 +11,10 @@ public class Schema {
     private String dataFilePath;
     private String tableName;
 
+    public Column getColumn(String name) {
+        return columns.stream().filter(x -> x.getName().equals(name)).findFirst().get();
+    }
+
     public Schema(ArrayList<Column> columns) {
         this.columns = columns;
     }

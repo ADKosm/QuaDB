@@ -7,6 +7,7 @@ import dbms.schema.Row;
 import dbms.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.stream.Collectors;
 
 public class CommandResult {
@@ -50,7 +51,13 @@ public class CommandResult {
                 result += queryResult.getSchema().getTableName() + "\n" + queryResult.getSchema().getColumns().stream().map(Column::toString).collect(Collectors.joining("|"));
                 break;
             case Consts.SHOW_ROWS:
-                result += queryResult.getResults().stream().map(Row::toString).collect(Collectors.joining("\n"));
+                StringBuilder builder = new StringBuilder();
+                builder.append(queryResult.getResultTable().getName()).append("\n");
+                for(Iterator<Row> iterator = queryResult.getResultTable().iterator(); iterator.hasNext();) {
+                    builder.append(iterator.next().toString()).append("\n");
+                }
+                result += builder.toString();
+                queryResult.getResultTable().clear();
                 break;
         }
 

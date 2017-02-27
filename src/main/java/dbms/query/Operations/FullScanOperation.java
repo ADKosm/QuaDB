@@ -1,32 +1,59 @@
 package dbms.query.Operations;
 
+import dbms.query.Computator;
+import dbms.query.Predicate;
+import dbms.schema.Row;
+import dbms.schema.Schema;
+import dbms.storage.Page;
+import dbms.storage.table.Table;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Stack;
+
+/**
+ * Stack: |lvalue|rvalue|table|<top>
+ */
 public class FullScanOperation implements Operation {
     private String entityName;
-    private String predicate;
+    private Predicate predicate;
 
-    public FullScanOperation(String entityName, String predicate) {
-        this.entityName = entityName;
+    public FullScanOperation(Predicate predicate) {
         this.predicate = predicate;
     }
 
-    public FullScanOperation(String entityName) {
-        this.entityName = entityName;
+    @Override
+    public void compute(Computator computator) {
+        Stack<Object> computationMachine = computator.getComputationMachine();
+
+        Table table = (Table) computationMachine.pop();
+        Object rvalue = computationMachine.pop();
+        Object lvalue = computationMachine.pop();
+
+        try {
+            predicate.setAgruments(lvalue, rvalue, table.getSchema());
+        } catch (Exception e) {
+            e.fillInStackTrace();
+            return;
+        }
+
+        Table resultTable = new Table(table.getSchema());
+        Iterator<Row> rowIterator = table.iterator();
+        while(rowIterator.hasNext()) {
+            Row row = rowIterator.next();
+            if(predicate.check(row)) {
+                resultTable.add(row);
+            }
+        }
+        computationMachine.push(resultTable);
+        table.clear();
     }
 
-
-    public String getEntityName() {
-        return entityName;
-    }
-
-    public void setEntityName(String entityName) {
-        this.entityName = entityName;
-    }
-
-    public String getPredicate() {
+    public Predicate getPredicate() {
         return predicate;
     }
 
-    public void setPredicate(String predicate) {
+    public void setPredicate(Predicate predicate) {
         this.predicate = predicate;
     }
 }

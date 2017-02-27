@@ -2,6 +2,8 @@ package dbms.storage;
 
 import dbms.Consts;
 import dbms.schema.Schema;
+import dbms.storage.table.RealTable;
+import dbms.storage.table.Table;
 
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -10,12 +12,6 @@ import java.util.regex.Pattern;
 
 public class DiskManager {
     private Pattern pattern = Pattern.compile("(.+):([0-9]+)");
-
-    public static final DiskManager instance = new DiskManager();
-
-    public static DiskManager getInstance() {
-        return instance;
-    }
 
     public Page getPage(String pageId) {
         Matcher m = pattern.matcher(pageId);

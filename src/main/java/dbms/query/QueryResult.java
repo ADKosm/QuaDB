@@ -1,15 +1,14 @@
 package dbms.query;
 
 import dbms.schema.Row;
-import dbms.schema.Schema;
+import dbms.schema.TableSchema;
 import dbms.storage.table.Table;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
 public class QueryResult {
-    private ArrayList<Schema> schemas = new ArrayList<Schema>();
-    private Schema schema;
+    private ArrayList<TableSchema> schemas = new ArrayList<TableSchema>();
+    private TableSchema schema;
     private ArrayList<Row> results = new ArrayList<Row>();
     private Table resultTable;
     private int rowsNumber = 0;
@@ -22,11 +21,11 @@ public class QueryResult {
         return results;
     }
 
-    public void setSchemas(ArrayList<Schema> schemas) {
+    public void setSchemas(ArrayList<TableSchema> schemas) {
         this.schemas = schemas;
     }
 
-    public ArrayList<Schema> getSchemas() {
+    public ArrayList<TableSchema> getSchemas() {
         return schemas;
     }
 
@@ -38,11 +37,11 @@ public class QueryResult {
         return rowsNumber;
     }
 
-    public Schema getSchema() {
+    public TableSchema getSchema() {
         return schema;
     }
 
-    public void setSchema(Schema schema) {
+    public void setSchema(TableSchema schema) {
         this.schema = schema;
     }
 

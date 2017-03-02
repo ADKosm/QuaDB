@@ -1,19 +1,24 @@
 package dbms.storage;
 
 import dbms.Consts;
-import dbms.schema.Schema;
-import dbms.storage.table.RealTable;
-import dbms.storage.table.Table;
 
 import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DiskManager {
+public class DiskManager<T extends Page> {
     private Pattern pattern = Pattern.compile("(.+):([0-9]+)");
 
-    public Page getPage(String pageId) {
+    Function<MappedByteBuffer, T> creator;
+
+    public DiskManager(Function<MappedByteBuffer, T> creator) {
+        this.creator = creator;
+    }
+
+    public T getPage(String pageId) {
         Matcher m = pattern.matcher(pageId);
         if(m.find()) {
             try{
@@ -26,7 +31,7 @@ public class DiskManager {
 
                 if(pageIndex >= blocks) return null;
 
-                Page page = new Page(
+                T page = creator.apply(
                         file.getChannel().map(FileChannel.MapMode.READ_WRITE,
                         pageIndex * Consts.BLOCK_SIZE,
                         Consts.BLOCK_SIZE)
@@ -40,17 +45,17 @@ public class DiskManager {
         return null;
     }
 
-    public Integer getBlocksCount(String path) {
+    public Long getBlocksCount(String path) {
         try{
             RandomAccessFile file = new RandomAccessFile(path, "r");
-            return (int)(file.length() / (long) Consts.BLOCK_SIZE);
+            return (file.length() / (long) Consts.BLOCK_SIZE);
         } catch (Exception e) {
             System.out.println("Can't read file");
-            return 0;
+            return (long)0;
         }
     }
 
-    public Page allocatePage(String pageId, Schema schema) {
+    public T allocatePage(String pageId) {
         Matcher m = pattern.matcher(pageId);
         try {
             if(m.find()) {
@@ -59,11 +64,10 @@ public class DiskManager {
 
                     RandomAccessFile file = new RandomAccessFile(filePath, "rw");
 
-                    Page page = Page.createPage(
+                    T page = creator.apply(
                             file.getChannel().map(FileChannel.MapMode.READ_WRITE,
                                     pageIndex * Consts.BLOCK_SIZE,
-                                    Consts.BLOCK_SIZE),
-                            schema
+                                    Consts.BLOCK_SIZE)
                     );
 
                     return page;

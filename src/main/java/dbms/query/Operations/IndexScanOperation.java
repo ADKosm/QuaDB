@@ -1,21 +1,19 @@
 package dbms.query.Operations;
 
+import dbms.index.Index;
 import dbms.query.Computator;
 import dbms.query.Predicate;
-import dbms.schema.Row;
 import dbms.storage.table.Table;
 
-import java.util.Iterator;
 import java.util.Stack;
 
 /**
- * Stack: |lvalue|rvalue|table|<top>
+ * Created by alex on 02.03.17.
  */
-public class FullScanOperation implements Operation {
-    private String entityName;
+public class IndexScanOperation implements Operation {
     private Predicate predicate;
 
-    public FullScanOperation(Predicate predicate) {
+    public IndexScanOperation(Predicate predicate) {
         this.predicate = predicate;
     }
 
@@ -27,6 +25,8 @@ public class FullScanOperation implements Operation {
         Object rvalue = computationMachine.pop();
         Object lvalue = computationMachine.pop();
 
+        Index index = table.getIndex(predicate.getColumn());
+
         try {
             predicate.setAgruments(lvalue, rvalue, table.getSchema());
         } catch (Exception e) {
@@ -34,23 +34,8 @@ public class FullScanOperation implements Operation {
             return;
         }
 
-        Table resultTable = new Table(table.getSchema());
-        Iterator<Row> rowIterator = table.iterator();
-        while(rowIterator.hasNext()) {
-            Row row = rowIterator.next();
-            if(predicate.check(row)) {
-                resultTable.add(row);
-            }
-        }
+        Table resultTable = index.search(predicate);
         computationMachine.push(resultTable);
-        table.clear();
-    }
-
-    public Predicate getPredicate() {
-        return predicate;
-    }
-
-    public void setPredicate(Predicate predicate) {
-        this.predicate = predicate;
+        table.clear(); // nothing
     }
 }

@@ -2,11 +2,9 @@ package dbms.query;
 
 import dbms.schema.Column;
 import dbms.schema.Row;
-import dbms.schema.Schema;
+import dbms.schema.TableSchema;
 import dbms.schema.dataTypes.Cell;
 
-import java.util.HashMap;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -37,11 +35,23 @@ public class Predicate {
         }
     }
 
+    public Column getColumn() {
+        if(leftValue instanceof Column) return (Column) leftValue;
+        if(rightValue instanceof Column) return (Column) rightValue;
+        return null;
+    }
+
+    public Object getValue() {
+        if(leftValue instanceof Column && !(rightValue instanceof Column)) return (Column) rightValue;
+        if(rightValue instanceof Column && !(leftValue instanceof Column)) return (Column) leftValue;
+        return null;
+    }
+
     public String getOperator() {
         return operator;
     }
 
-    public void setAgruments(Object lvalue, Object rvalue, Schema schema) throws Exception{
+    public void setAgruments(Object lvalue, Object rvalue, TableSchema schema) throws Exception{
         if(lvalue instanceof Column) {
             leftColumn = true;
             leftValue = (Integer) schema.getColumns().indexOf((Column) lvalue);

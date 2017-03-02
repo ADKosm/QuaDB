@@ -1,14 +1,12 @@
 package dbms.storage.table;
 
 import dbms.schema.Row;
-import dbms.schema.Schema;
+import dbms.schema.TableSchema;
+import dbms.schema.dataTypes.PagePointer;
 import dbms.storage.BufferManager;
-import dbms.storage.Page;
+import dbms.storage.DataPage;
 
 import java.io.File;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,18 +14,18 @@ import java.util.List;
  * Created by alex on 27.02.17.
  */
 public class RealTable implements TableImplementation {
-    private Schema schema;
+    private TableSchema schema;
     private String name;
 
-    private BufferManager bufferManager;
+    private BufferManager<DataPage> bufferManager;
 
-    public RealTable(Schema schema, String name) {
+    public RealTable(TableSchema schema, String name) {
         this.schema = schema;
         this.name = name;
-        bufferManager = new BufferManager(this);
+        bufferManager = new BufferManager<>(this.schema, DataPage::new);
     }
 
-    public static RealTable createNewRealTable (String name, Schema schema) { // TODO: adaptate to real creating table by query
+    public static RealTable createNewRealTable (String name, TableSchema schema) { // TODO: adaptate to real creating table by query
         try{
             new File(schema.getDataFilePath()).createNewFile();
             return new RealTable(schema, name);
@@ -38,14 +36,14 @@ public class RealTable implements TableImplementation {
     }
 
     @Override
-    public void add(Row row) {
-        Page page = bufferManager.getLastPage();
+    public PagePointer add(Row row) {
+        DataPage page = bufferManager.getLastPage();
 
         if(page == null || !page.canPlaced(row)) {
             page = bufferManager.allocateNewPage();
         }
 
-        page.insertValues(row);
+        return new PagePointer(bufferManager.getPageCount()-1,  page.insertValues(row));
     }
 
     @Override
@@ -55,19 +53,23 @@ public class RealTable implements TableImplementation {
         }
     }
 
-    public Schema getSchema() {
+    public Row getRowAt(PagePointer pointer) {
+        return bufferManager.getPage(pointer.getIndex()).getRow(pointer.getOffset(), schema);
+    }
+
+    public TableSchema getSchema() {
         return schema;
     }
 
     public class RealTableIterator implements Iterator<Row> {
-        private int offset;
+        private Long offset;
         private int index;
 
         private List<Row> currentRows;
-        private Page currentPage;
+        private DataPage currentPage;
 
         public RealTableIterator() {
-            offset = 0;
+            offset = (long)0;
             index = 0;
             currentPage = bufferManager.getPage(offset);
             if(currentPage != null) {

@@ -10,6 +10,7 @@ public final class Consts {
     // Database Server options
     public static final int PORT = 8000;
     public static final String SCHEMA_ROOT_PATH = "/tmp/simpledb";
+    public static final String SCHEMA_INDEX_PATH = "/tmp/simpledb/indexes";
 
     // Database options
     public static final int BLOCK_SIZE = 4096;
@@ -51,7 +52,9 @@ public final class Consts {
     public static final int COLUMN_TYPE_INTEGER = 1;
     public static final int COLUMN_TYPE_VARCHAR = 2;
     public static final int COLUMN_TYPE_DATETIME = 3;
-    public enum COLUMN_TYPES {COLUMN_TYPE_INTEGER, COLUMN_TYPE_VARCHAR, COLUMN_TYPE_DATETIME};
+    public static final int COLUMN_TYPE_POINTER = 4;
+    public static final int COLUMN_TYPE_PAGEPOINTER = 5;
+    public enum COLUMN_TYPES {COLUMN_TYPE_INTEGER, COLUMN_TYPE_VARCHAR, COLUMN_TYPE_DATETIME, COLUMN_TYPE_POINTER, COLUMN_TYPE_PAGEPOINTER};
 
     public static final int MAX_MEMORY_USED = 4096 * 2; // 2 pages | TODO: increase in future
 }

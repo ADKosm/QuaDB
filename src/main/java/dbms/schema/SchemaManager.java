@@ -8,15 +8,11 @@ import dbms.storage.StorageManager;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.StringJoiner;
-import java.util.function.Function;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SchemaManager {
-
+public class SchemaManager { // TODO: доделать
     public static final SchemaManager instance = new SchemaManager();
     public static SchemaManager getInstance() { return instance; }
 
@@ -24,12 +20,17 @@ public class SchemaManager {
 
     private String shemaRoot;
     private String tempRoot;
-    private HashMap<String, Schema> structure;
+    private String indexRoot;
+    private HashMap<String, TableSchema> structure; // TODO: replace with interface
     private HashMap<String, Integer> typesMap;
     private Pattern metaPattern;
 
-    public Schema getSchema(String tableName) {
+    public TableSchema getSchema(String tableName) {
         return structure.get(tableName);
+    }
+
+    public String getIndexRoot() {
+        return indexRoot;
     }
 
     private void loadScheme(File table) throws Exception {
@@ -43,7 +44,7 @@ public class SchemaManager {
                     new Column(data[0], typesMap.get(data[1]))
             );
         }
-        Schema schema = new Schema(colums);
+        TableSchema schema = new TableSchema(colums);
         Matcher m = Pattern.compile("([a-zA-Z0-9]+)\\.meta").matcher(table.getName());
         String tableName;
         if(m.find()) {
@@ -56,11 +57,11 @@ public class SchemaManager {
         }
         structure.put(tableName, schema);
 
-        storageManager.loadTable(schema);
+        storageManager.loadTable(schema); // TODO: load indexes
     }
 
     public SchemaManager() {
-        structure = new HashMap<String, Schema>();
+        structure = new HashMap<String, TableSchema>();
         typesMap = new HashMap<String, Integer>();
         typesMap.put("int", Consts.COLUMN_TYPE_INTEGER);
         typesMap.put("varchar", Consts.COLUMN_TYPE_VARCHAR);
@@ -68,13 +69,16 @@ public class SchemaManager {
 
         this.shemaRoot = Consts.SCHEMA_ROOT_PATH;
         this.tempRoot = this.shemaRoot + "/.qua_temp";
+        this.indexRoot = this.shemaRoot + "/indexes";
 
-        File tempDir = new File(this.tempRoot);
-        if(!tempDir.exists()) {
-            try {
-                tempDir.mkdir();
-            } catch (Exception e) {
-                e.fillInStackTrace();
+        for(String dir : Arrays.asList(this.tempRoot, this.indexRoot)){
+            File tempDir = new File(dir);
+            if(!tempDir.exists()) {
+                try {
+                    tempDir.mkdir();
+                } catch (Exception e) {
+                    e.fillInStackTrace();
+                }
             }
         }
 
@@ -98,14 +102,14 @@ public class SchemaManager {
 
         if(Pattern.matches("show tables", query)) {
             QueryResult result = new QueryResult();
-            result.setSchemas(new ArrayList<Schema>(structure.values()));
+            result.setSchemas(new ArrayList<TableSchema>(structure.values()));
             commandResult.setQueryResult(result);
             commandResult.setType(Consts.SHOW_TABLES);
         } else if(Pattern.matches("describe table [a-z0-9]+", query)) {
             QueryResult result = new QueryResult();
             Matcher m = Pattern.compile("describe table ([a-z0-9]+)").matcher(query);
             if(m.find()) {
-                Schema schema = structure.get(m.group(1));
+                TableSchema schema = structure.get(m.group(1));
                 if(schema == null) {
                     throw new Exception("Can't describe this table");
                 }

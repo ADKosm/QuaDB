@@ -1,11 +1,11 @@
 package dbms.query.Operations;
 
+import dbms.index.Index;
 import dbms.query.Computator;
+import dbms.schema.Column;
 import dbms.schema.Row;
-import dbms.schema.Schema;
-import dbms.storage.Page;
+import dbms.schema.dataTypes.PagePointer;
 import dbms.storage.table.Table;
-import javafx.scene.control.Tab;
 
 import java.util.List;
 import java.util.Stack;
@@ -27,7 +27,14 @@ public class InsertOperation implements Operation {
             List<String> values = (List<String>) computationMachine.pop();
 
             Row row = table.getSchema().valuesToRow(values);
-            table.add(row);
+            PagePointer pointer = table.add(row);
+
+            for(Column column: table.getSchema().getColumns()) {
+                Index index = table.getIndex(column);
+                if(index != null) {
+                    index.add(row, pointer);
+                }
+            }
 
             Table tableWithInsertValue = new Table(table.getSchema());
             tableWithInsertValue.add(row);

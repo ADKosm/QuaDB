@@ -4,7 +4,10 @@ import dbms.Consts;
 import dbms.schema.Column;
 import dbms.schema.Row;
 import dbms.schema.Schema;
+import dbms.schema.TableSchema;
 import dbms.schema.dataTypes.Cell;
+import dbms.schema.dataTypes.Int;
+import dbms.schema.dataTypes.PagePointer;
 
 import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
@@ -37,24 +40,41 @@ public class Page {
 
     private MappedByteBuffer buffer;
 
-    public Page(MappedByteBuffer b) {
+    public Page(MappedByteBuffer b, boolean clear) {
         buffer = b;
-        freeSpace = buffer.getInt();
-        recordCount = buffer.getInt();
+        if(clear) {
+            recordCount = 0;
+            freeSpace = Consts.BLOCK_SIZE - 4 - 4 - 1;
+            //  Free space = Page size - |Free space| - |Record count| - |zero|
+            buffer.putInt(freeSpace);
+            buffer.putInt(recordCount);
+
+            while (buffer.remaining() > 0) buffer.put((byte) 0); // clear page
+
+            buffer.position(0);
+        } else {
+            freeSpace = buffer.getInt();
+            recordCount = buffer.getInt();
+        }
     }
 
-    public static Page createPage(MappedByteBuffer b, Schema schema) {
-        Integer rCount = 0;
-        Integer fSpace = Consts.BLOCK_SIZE - 4 - 4 - 1;
-        //  Free space = Page size - |Free space| - |Record count| - |zero|
-        b.putInt(fSpace);
-        b.putInt(rCount);
+    public Integer getRecordCount() {
+        return recordCount;
+    }
 
-        while(b.remaining() > 0) b.put((byte) 0); // clear page
 
-        b.position(0);
+    public Row getRow(Short offset, Schema schema) {
+        try {
+            buffer.position(offset);
+            boolean deleted = (buffer.get() == 0);
+            if(deleted) return null;
 
-        return new Page(b);
+            List<Cell> cells = new ArrayList<Cell>();
+            for(Column column : schema.getColumns()) {
+                cells.add(column.readCell(buffer));
+            }
+            return new Row(cells);
+        } catch (Exception e ){ e.fillInStackTrace(); return null; }
     }
 
     public List<Row> toRows(Schema schema) {
@@ -84,7 +104,7 @@ public class Page {
         return freeSpace >= row.getRowSize() + 2; // |row| + |record in shift table|
     }
 
-    public void insertValues(Row row) {
+    public Short insertValues(Row row) {
         short newPosition;
         if(recordCount == 0) {
             newPosition = (short)(Consts.BLOCK_SIZE - row.getRowSize());
@@ -107,5 +127,20 @@ public class Page {
         buffer.position(0);
         buffer.putInt(freeSpace);
         buffer.putInt(recordCount);
+        buffer.force();
+        return newPosition;
+    }
+
+    public void clear() {
+        buffer.position(0);
+        recordCount = 0;
+        freeSpace = Consts.BLOCK_SIZE - 4 - 4 - 1;
+        //  Free space = Page size - |Free space| - |Record count| - |zero|
+        buffer.putInt(freeSpace);
+        buffer.putInt(recordCount);
+
+        while(buffer.remaining() > 0) buffer.put((byte) 0); // clear page
+
+        buffer.position(0);
     }
 }

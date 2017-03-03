@@ -2,10 +2,9 @@ package dbms.query;
 
 import dbms.query.Operations.*;
 import dbms.schema.Column;
-import dbms.schema.Schema;
+import dbms.schema.TableSchema;
 import dbms.storage.StorageManager;
 import dbms.storage.table.Table;
-import javafx.scene.control.Tab;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -59,6 +58,7 @@ public class QueryPlan {
         // TODO: optimize query plan using relation algebra and indexes
         PlanOptimizer planOptimizer = new PlanOptimizer();
         planOptimizer.precomputeConstantPredicateStatement();
+        planOptimizer.useIndexSearch();
     }
 
     private void buildInsertPlan(List<String> values, String tableName) {
@@ -155,12 +155,32 @@ public class QueryPlan {
                         continue;
                     }
                     if(scan.getPredicate().getOperator().equals("False")) {
-                        Schema schema = ((Table) plan.get(i-1)).getSchema();
+                        TableSchema schema = ((Table) plan.get(i-1)).getSchema();
                         plan.set(i-1, new Table(schema)); // empty table
                         plan.remove(i);
                         i--;
                         continue;
                     }
+                }
+            }
+        }
+
+        public void useIndexSearch() {
+            if(plan.size() < 4) return;
+            for(int i = 3; i < plan.size(); i++) {
+                if(plan.get(i) instanceof FullScanOperation) {
+                    Table table = (Table)plan.get(i-1);
+                    Object lv = plan.get(i-2);
+                    Object rv = plan.get(i-3);
+                    if((lv instanceof Column && !(rv instanceof Column))
+                            || (rv instanceof Column && !(lv instanceof Column))) {
+                        Column c = (Column)(lv instanceof Column ? lv : rv);
+                        if(table.getIndex(c) != null) {
+                            plan.set(i, new IndexScanOperation(((FullScanOperation) plan.get(i)).getPredicate()));
+                        }
+                    }
+
+
                 }
             }
         }

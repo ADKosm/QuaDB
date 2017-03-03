@@ -1,7 +1,8 @@
 package dbms.storage.table;
 
 import dbms.schema.Row;
-import dbms.schema.Schema;
+import dbms.schema.TableSchema;
+import dbms.schema.dataTypes.PagePointer;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,11 +12,11 @@ import java.util.List;
  * Created by alex on 27.02.17.
  */
 public class VirtualTable implements TableImplementation {
-    private Schema schema;
+    private TableSchema schema;
     private String name;
     private List<Row> rows = new ArrayList<>();
 
-    public VirtualTable(Schema schema, String name) {
+    public VirtualTable(TableSchema schema, String name) {
         this.schema = schema;
         this.name = name;
     }
@@ -26,8 +27,9 @@ public class VirtualTable implements TableImplementation {
     }
 
     @Override
-    public void add(Row row) {
+    public PagePointer add(Row row) {
         rows.add(row);
+        return null;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package dbms.storage.table;
 
 import dbms.schema.Row;
+import dbms.schema.dataTypes.PagePointer;
 
 import java.util.Iterator;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 public interface TableImplementation {
     Iterator<Row> iterator();
 
-    void add(Row row);
+    PagePointer add(Row row);
     void addAll(List<Row> rows);
 
     void clear();

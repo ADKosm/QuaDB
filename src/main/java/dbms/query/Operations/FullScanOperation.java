@@ -3,12 +3,9 @@ package dbms.query.Operations;
 import dbms.query.Computator;
 import dbms.query.Predicate;
 import dbms.schema.Row;
-import dbms.schema.Schema;
-import dbms.storage.Page;
 import dbms.storage.table.Table;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Stack;
 
 /**

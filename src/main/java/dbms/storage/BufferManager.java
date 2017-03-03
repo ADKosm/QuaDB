@@ -1,41 +1,36 @@
 package dbms.storage;
 
-import dbms.query.Computator;
-import dbms.query.Operations.FullScanOperation;
-import dbms.query.Operations.InsertOperation;
-import dbms.query.Operations.Operation;
-import dbms.query.QueryPlan;
-import dbms.query.QueryResult;
 import dbms.schema.Schema;
-import dbms.schema.dataTypes.Int;
+import dbms.schema.TableSchema;
 import dbms.storage.table.RealTable;
-import dbms.storage.table.Table;
 
+import java.nio.MappedByteBuffer;
 import java.util.HashMap;
+import java.util.function.Function;
 
 public class BufferManager {
-    private RealTable table;
+    private Schema schema;
 
     private HashMap<String, Page> bufferTable = new HashMap<String, Page>();
     private DiskManager diskManager = new DiskManager();
 
-    public BufferManager(RealTable table) {
-        this.table = table;
+    public BufferManager(Schema schema) {
+        this.schema = schema;
     }
 
-    private String toPageId(Integer offset) { // filePath:3:45
-        return table.getSchema().getDataFilePath() + ":" + offset.toString();
+    private String toPageId(Long offset) { // filePath:3:45
+        return schema.getDataFilePath() + ":" + offset.toString();
     }
 
-    public boolean isBuffered(Integer offset) {
+    public boolean isBuffered(Long offset) {
         return this.bufferTable.containsKey(toPageId(offset));
     }
 
-    public void bufferPage(Integer offset, Page page) {
+    public void bufferPage(Long offset, Page page) {
         this.bufferTable.put(toPageId(offset), page);
     }
 
-    public Page getPage(Integer offset) {
+    public Page getPage(Long offset) { // use long for offsets
         String pageId = toPageId(offset);
         if(isBuffered(offset)) {
             return bufferTable.get(pageId);
@@ -48,7 +43,7 @@ public class BufferManager {
     }
 
     public Page getLastPage() {
-        Integer blocks = diskManager.getBlocksCount(table.getSchema().getDataFilePath());
+        Long blocks = diskManager.getBlocksCount(schema.getDataFilePath());
         if(blocks == 0) {
             return null;
         }
@@ -56,10 +51,14 @@ public class BufferManager {
     }
 
     public Page allocateNewPage() {
-        Schema schema = table.getSchema();
+        Schema schema = this.schema;
         String path = schema.getDataFilePath();
-        Integer blocks = diskManager.getBlocksCount(path);
+        Long blocks = diskManager.getBlocksCount(path);
         String pageId = path + ":" + blocks.toString();
-        return diskManager.allocatePage(pageId, schema);
+        return diskManager.allocatePage(pageId);
+    }
+
+    public Long getPageCount() {
+        return diskManager.getBlocksCount(schema.getDataFilePath());
     }
 }

@@ -1,10 +1,7 @@
 package dbms.schema;
 
 import dbms.Consts;
-import dbms.schema.dataTypes.Cell;
-import dbms.schema.dataTypes.Datetime;
-import dbms.schema.dataTypes.Int;
-import dbms.schema.dataTypes.Varchar;
+import dbms.schema.dataTypes.*;
 
 import java.nio.MappedByteBuffer;
 import java.time.Instant;
@@ -31,6 +28,8 @@ public class Column {
         typesMap.put(Consts.COLUMN_TYPE_INTEGER, "int");
         typesMap.put(Consts.COLUMN_TYPE_VARCHAR, "varchar");
         typesMap.put(Consts.COLUMN_TYPE_DATETIME, "datetime");
+        typesMap.put(Consts.COLUMN_TYPE_POINTER, "pointer");
+        typesMap.put(Consts.COLUMN_TYPE_PAGEPOINTER, "pagepointer");
 
         String result = size == 0 ?
                 " " + name + " [ " + typesMap.get(type) + " ] " :
@@ -51,8 +50,28 @@ public class Column {
                 return Datetime.readDatetime(buffer);
             case Consts.COLUMN_TYPE_VARCHAR:
                 return Varchar.readVarchar(buffer, size);
+            case Consts.COLUMN_TYPE_POINTER:
+                return Pointer.readPointer(buffer);
+            case Consts.COLUMN_TYPE_PAGEPOINTER:
+                return PagePointer.readPagePointer(buffer);
         }
         throw new Exception("Unknown column type");
+    }
+
+    public Integer getMaxSize() {
+        switch (type) {
+            case Consts.COLUMN_TYPE_INTEGER:
+                return Integer.BYTES;
+            case Consts.COLUMN_TYPE_DATETIME:
+                return Long.BYTES;
+            case Consts.COLUMN_TYPE_VARCHAR:
+                return Integer.valueOf((int) size) + 1; // saving and size
+            case Consts.COLUMN_TYPE_PAGEPOINTER:
+                return Long.BYTES + Short.BYTES;
+            case Consts.COLUMN_TYPE_POINTER:
+                return Long.BYTES;
+        }
+        return 0;
     }
 
     public Cell createCell(String value) throws Exception {

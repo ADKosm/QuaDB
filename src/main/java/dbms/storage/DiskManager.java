@@ -1,12 +1,12 @@
 package dbms.storage;
 
 import dbms.Consts;
-import dbms.schema.Schema;
-import dbms.storage.table.RealTable;
-import dbms.storage.table.Table;
+import sun.security.krb5.internal.PAEncTSEnc;
 
 import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,8 +28,9 @@ public class DiskManager {
 
                 Page page = new Page(
                         file.getChannel().map(FileChannel.MapMode.READ_WRITE,
-                        pageIndex * Consts.BLOCK_SIZE,
-                        Consts.BLOCK_SIZE)
+                                pageIndex * Consts.BLOCK_SIZE,
+                                Consts.BLOCK_SIZE),
+                        false
                 );
                 return page;
             } catch (Exception e) {
@@ -40,17 +41,17 @@ public class DiskManager {
         return null;
     }
 
-    public Integer getBlocksCount(String path) {
+    public Long getBlocksCount(String path) {
         try{
             RandomAccessFile file = new RandomAccessFile(path, "r");
-            return (int)(file.length() / (long) Consts.BLOCK_SIZE);
+            return (file.length() / (long) Consts.BLOCK_SIZE);
         } catch (Exception e) {
             System.out.println("Can't read file");
-            return 0;
+            return (long)0;
         }
     }
 
-    public Page allocatePage(String pageId, Schema schema) {
+    public Page allocatePage(String pageId) {
         Matcher m = pattern.matcher(pageId);
         try {
             if(m.find()) {
@@ -59,11 +60,11 @@ public class DiskManager {
 
                     RandomAccessFile file = new RandomAccessFile(filePath, "rw");
 
-                    Page page = Page.createPage(
+                    Page page = new Page(
                             file.getChannel().map(FileChannel.MapMode.READ_WRITE,
                                     pageIndex * Consts.BLOCK_SIZE,
                                     Consts.BLOCK_SIZE),
-                            schema
+                            true
                     );
 
                     return page;

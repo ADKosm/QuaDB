@@ -1,31 +1,17 @@
 package dbms.schema;
 
-import dbms.schema.dataTypes.Cell;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class Schema {
-    private ArrayList<Column> columns;
+/**
+ * Created by alex on 02.03.17.
+ */
+public abstract class Schema {
     private String schemaFilePath;
     private String dataFilePath;
     private String tableName;
+    protected List<Column> columns = new ArrayList<>();
 
-    public Column getColumn(String name) {
-        return columns.stream().filter(x -> x.getName().equals(name)).findFirst().get();
-    }
-
-    public Schema(ArrayList<Column> columns) {
-        this.columns = columns;
-    }
-
-    public void setColumns(ArrayList<Column> columns) {
-        this.columns = columns;
-    }
-
-    public ArrayList<Column> getColumns() {
-        return columns;
-    }
 
     public void setDataFilePath(String dataFilePath) {
         this.dataFilePath = dataFilePath;
@@ -51,14 +37,11 @@ public class Schema {
         this.tableName = tableName;
     }
 
-    public Row valuesToRow(List<String> values) throws Exception {
-        if(values.size() != columns.size()) {
-            throw new Exception("Incorrect shape of values"); // TODO: add NULL as value
-        }
-        List<Cell> cells = new ArrayList<Cell>();
-        for(int i = 0; i < values.size(); i++) {
-            cells.add(columns.get(i).createCell(values.get(i)));
-        }
-        return new Row(cells);
+    public List<Column> getColumns() {
+        return columns;
+    }
+
+    public void setColumns(List<Column> columns) {
+        this.columns = columns;
     }
 }

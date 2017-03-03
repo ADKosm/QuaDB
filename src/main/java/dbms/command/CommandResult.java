@@ -4,9 +4,8 @@ import dbms.Consts;
 import dbms.query.QueryResult;
 import dbms.schema.Column;
 import dbms.schema.Row;
-import dbms.schema.Schema;
+import dbms.schema.TableSchema;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.stream.Collectors;
 
@@ -45,7 +44,7 @@ public class CommandResult {
 
         switch (type) {
             case Consts.SHOW_TABLES:
-                result += queryResult.getSchemas().stream().map(Schema::getTableName).collect(Collectors.joining("\n"));
+                result += queryResult.getSchemas().stream().map(TableSchema::getTableName).collect(Collectors.joining("\n"));
                 break;
             case Consts.DESCRIBE_TABLE:
                 result += queryResult.getSchema().getTableName() + "\n" + queryResult.getSchema().getColumns().stream().map(Column::toString).collect(Collectors.joining("|"));

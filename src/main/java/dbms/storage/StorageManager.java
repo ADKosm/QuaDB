@@ -50,10 +50,12 @@ public class StorageManager {
                 indexSchema.setDataFilePath(path + ".index"); // must exist!
                 indexSchema.setSchemaFilePath(path + ".meta");
                 indexSchema.setTableName(table.getName());
+                indexSchema.setRootPosition(rootPage);
 
                 Index newIndex = new Index(indexSchema);
                 table.addIndex(column, newIndex);
             } catch (Exception e) {
+                e.fillInStackTrace();
                 continue;
             }
         }
@@ -61,10 +63,12 @@ public class StorageManager {
 
     public void updateIndexMeta(IndexSchema indexSchema) {
         try {
-            BufferedWriter indexFile = new BufferedWriter(new FileWriter(new File(
-                indexSchema.getSchemaFilePath()
-            ), false));
-            indexFile.write(indexSchema.serialize());
+//            BufferedWriter indexFile = new BufferedWriter(new FileWriter(new File(
+//                indexSchema.getSchemaFilePath()
+//            ), false));
+            RandomAccessFile indexFile = new RandomAccessFile(indexSchema.getSchemaFilePath(), "rw");
+            indexFile.setLength(0);
+            indexFile.writeBytes(indexSchema.serialize());
         } catch (Exception e) {
             e.fillInStackTrace();
         }

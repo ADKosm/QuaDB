@@ -25,14 +25,14 @@ public class IndexScanOperation implements Operation {
         Object rvalue = computationMachine.pop();
         Object lvalue = computationMachine.pop();
 
-        Index index = table.getIndex(predicate.getColumn());
-
         try {
             predicate.setAgruments(lvalue, rvalue, table.getSchema());
         } catch (Exception e) {
             e.fillInStackTrace();
             return;
         }
+
+        Index index = table.getIndex(predicate.getColumn());
 
         Table resultTable = index.search(predicate);
         computationMachine.push(resultTable);

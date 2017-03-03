@@ -1,7 +1,5 @@
 package dbms.schema.dataTypes;
 
-import dbms.storage.Page;
-
 import java.nio.MappedByteBuffer;
 
 /**

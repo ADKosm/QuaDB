@@ -4,7 +4,7 @@ import dbms.schema.Row;
 import dbms.schema.TableSchema;
 import dbms.schema.dataTypes.PagePointer;
 import dbms.storage.BufferManager;
-import dbms.storage.DataPage;
+import dbms.storage.Page;
 
 import java.io.File;
 import java.util.Iterator;
@@ -17,12 +17,12 @@ public class RealTable implements TableImplementation {
     private TableSchema schema;
     private String name;
 
-    private BufferManager<DataPage> bufferManager;
+    private BufferManager bufferManager;
 
     public RealTable(TableSchema schema, String name) {
         this.schema = schema;
         this.name = name;
-        bufferManager = new BufferManager<>(this.schema, DataPage::new);
+        bufferManager = new BufferManager(this.schema);
     }
 
     public static RealTable createNewRealTable (String name, TableSchema schema) { // TODO: adaptate to real creating table by query
@@ -37,7 +37,7 @@ public class RealTable implements TableImplementation {
 
     @Override
     public PagePointer add(Row row) {
-        DataPage page = bufferManager.getLastPage();
+        Page page = bufferManager.getLastPage();
 
         if(page == null || !page.canPlaced(row)) {
             page = bufferManager.allocateNewPage();
@@ -66,7 +66,7 @@ public class RealTable implements TableImplementation {
         private int index;
 
         private List<Row> currentRows;
-        private DataPage currentPage;
+        private Page currentPage;
 
         public RealTableIterator() {
             offset = (long)0;

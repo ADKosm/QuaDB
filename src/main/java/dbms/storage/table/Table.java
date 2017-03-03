@@ -25,7 +25,7 @@ import java.util.List;
 public class Table {
     private SchemaManager schemaManager = SchemaManager.getInstance();
 
-    private HashMap<Column, Index> indexes = new HashMap<>();
+    private HashMap<String, Index> indexes = new HashMap<>();
     private TableSchema schema;
     private TableImplementation implementation;
     private String name;
@@ -96,12 +96,12 @@ public class Table {
 
     public void addIndex(Column column, Index index) {
         index.setTable((RealTable) this.implementation); // we can build index only on real table
-        indexes.put(column, index);
+        indexes.put(column.getName(), index);
     }
 
     public Index getIndex(Column column) {
         try {
-            Index index = indexes.get(column);
+            Index index = indexes.get(column.getName());
             return index;
         } catch (Exception e) {
             return null;

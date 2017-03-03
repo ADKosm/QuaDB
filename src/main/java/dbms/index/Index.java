@@ -14,11 +14,11 @@ public class Index {
 
     public Index(IndexSchema indexSchema) {
         this.schema = indexSchema;
-        this.tree = new BTree(indexSchema, table);
     }
 
     public void setTable(RealTable table) {
         this.table = table;
+        this.tree = new BTree(schema, table);
     }
 
     public Table search(Predicate predicate) {

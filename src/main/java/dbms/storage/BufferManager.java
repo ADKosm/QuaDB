@@ -8,18 +8,14 @@ import java.nio.MappedByteBuffer;
 import java.util.HashMap;
 import java.util.function.Function;
 
-public class BufferManager<T extends Page> {
-    Function<MappedByteBuffer, T> creator;
-
+public class BufferManager {
     private Schema schema;
 
-    private HashMap<String, T> bufferTable = new HashMap<String, T>();
-    private DiskManager<T> diskManager;
+    private HashMap<String, Page> bufferTable = new HashMap<String, Page>();
+    private DiskManager diskManager = new DiskManager();
 
-    public BufferManager(Schema schema, Function<MappedByteBuffer, T> creator) {
+    public BufferManager(Schema schema) {
         this.schema = schema;
-        this.creator = creator;
-        diskManager = new DiskManager<>(creator);
     }
 
     private String toPageId(Long offset) { // filePath:3:45
@@ -30,23 +26,23 @@ public class BufferManager<T extends Page> {
         return this.bufferTable.containsKey(toPageId(offset));
     }
 
-    public void bufferPage(Long offset, T page) {
+    public void bufferPage(Long offset, Page page) {
         this.bufferTable.put(toPageId(offset), page);
     }
 
-    public T getPage(Long offset) { // use long for offsets
+    public Page getPage(Long offset) { // use long for offsets
         String pageId = toPageId(offset);
         if(isBuffered(offset)) {
             return bufferTable.get(pageId);
         }
-        T page = diskManager.getPage(pageId);
+        Page page = diskManager.getPage(pageId);
         if(page != null) {
             bufferPage(offset, page);
         }
         return page;
     }
 
-    public T getLastPage() {
+    public Page getLastPage() {
         Long blocks = diskManager.getBlocksCount(schema.getDataFilePath());
         if(blocks == 0) {
             return null;
@@ -54,7 +50,7 @@ public class BufferManager<T extends Page> {
         return getPage(blocks-1);
     }
 
-    public T allocateNewPage() {
+    public Page allocateNewPage() {
         Schema schema = this.schema;
         String path = schema.getDataFilePath();
         Long blocks = diskManager.getBlocksCount(path);

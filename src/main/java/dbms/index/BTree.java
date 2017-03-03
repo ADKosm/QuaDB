@@ -8,12 +8,10 @@ import dbms.schema.dataTypes.Cell;
 import dbms.schema.dataTypes.PagePointer;
 import dbms.schema.dataTypes.Pointer;
 import dbms.storage.BufferManager;
-import dbms.storage.DataPage;
 import dbms.storage.Page;
 import dbms.storage.StorageManager;
 import dbms.storage.table.RealTable;
 import dbms.storage.table.Table;
-import sun.awt.image.ImageWatched;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -28,9 +26,17 @@ import java.util.ListIterator;
  * |Index Link(Long-Pointer)|Value(ColumnSize-Cell)|DataLink(Long+Short-PagePointer)|...|Index Link(Long)|0|
  * Index Link != 0. => Index Link = pageIndex + 1, so pageIndex = IndexLink - 1
  */
+
+// TODO: !!! DO REFACTORING! Get rid of workarounds
+
+/**
+ * Too slow inserting - with transaction, it can be faster
+ * Predicate must be more flexible - by now, only "column <(or>) number" format
+ * Bufferize BNodes
+ */
 public class BTree {
     private IndexSchema schema;
-    private BufferManager<DataPage> bufferManager;
+    private BufferManager bufferManager;
     private StorageManager storageManager = StorageManager.getInstance();
     private RealTable realTable;
 
@@ -39,7 +45,7 @@ public class BTree {
 
     public BTree(IndexSchema indexSchema, RealTable table) {
         this.schema = indexSchema;
-        bufferManager = new BufferManager<>(this.schema, DataPage::new);
+        bufferManager = new BufferManager(schema);
         this.realTable = table;
 
         Integer recordSize = 0;
@@ -84,7 +90,9 @@ public class BTree {
         Triple<Cell, PagePointer, BNode> insertingData = insert(readBNode(node.linkAt(position.nextIndex())), value, pointer);
         if(insertingData == null) return null;
 
-        node.addLink(position.nextIndex() + 1, insertingData.getRight().getReference())
+        Pointer nextRef = insertingData.getRight() == null ? null : insertingData.getRight().getReference();
+
+        node.addLink(position.nextIndex() + 1, nextRef)
                 .addData(position.nextIndex(), insertingData.getLeft(), insertingData.getMiddle())
                 .store();
 
@@ -150,7 +158,7 @@ public class BTree {
 
             store();
 
-            BNode rightPart = allocateBNode(rightData, rightLinks, rightPointers);
+            BNode rightPart = allocateBNode(rightData, rightLinks, rightPointers).store();
             return Triple.build(mediana, middlePointer, rightPart);
 
         }
@@ -172,29 +180,37 @@ public class BTree {
         }
 
         public BNode store() {
-            ((DataPage)page).clear();
+            (page).clear();
             for(int i = 0; i < data.size(); i++) {
                 List<Cell> cells = new ArrayList<>();
-                cells.add(links.get(i));
+                if(links.get(i) != null) {
+                    cells.add(links.get(i));
+                } else {
+                    cells.add(new Pointer((long)0));
+                }
                 cells.add(data.get(i));
                 cells.add(pointers.get(i));
                 Row row = new Row(cells);
-                ((DataPage)page).insertValues(row); // TODO: restore single Page class
+                (page).insertValues(row); // TODO: restore single Page class
             }
 
             List<Cell> cells = new ArrayList<>();
-            cells.add(links.get(links.size()-1));
+            if(links.get(links.size()-1) != null) {
+                cells.add(links.get(links.size()-1));
+            } else {
+                cells.add(new Pointer((long)0));
+            }
             try{
                 cells.add(schema.getIndexedColumn().createCell("0"));
             } catch (Exception e) {e.fillInStackTrace();}
             cells.add(new PagePointer((long)0, (short)0));
             Row row = new Row(cells);
-            ((DataPage) page).insertValues(row);
+            ( page).insertValues(row);
             return this;
         }
 
-        private void moveValue(Table table, ListIterator<Cell> iterator) {
-            table.add(realTable.getRowAt(pointers.get(iterator.previousIndex())));
+        private void moveValue(Table table, Integer index) {
+            table.add(realTable.getRowAt(pointers.get(index)));
         }
 
         public void searchEqual(Table table, Cell value) {
@@ -202,7 +218,7 @@ public class BTree {
             while (iterator.hasNext()) {
                 Cell currVal = iterator.next();
                 if(value.compareTo(currVal) == 0) {
-                    moveValue(table, iterator);
+                    moveValue(table, iterator.previousIndex());
                     return;
                 }
                 if(value.compareTo(currVal) < 0) {
@@ -216,33 +232,81 @@ public class BTree {
             }
         }
 
-        public void searchRange(Table table, Predicate predicate) {
-            ListIterator<Cell> iterator = data.listIterator();
-            Integer c = predicate.getOperator().equals("<") ? 1 : -1;
+        public void searchRange(Table table, Predicate predicate) { // TODO: refactor PLES!!!
+            if(data.size() == 0) return;
+
             Cell value;
             try{
                 value = predicate.getColumn().createCell(predicate.getValue().toString());
             }catch(Exception e) { return; }
-            boolean lastEqual = false;
-            while (iterator.hasNext()) {
-                Cell currVal = iterator.next();
-                if(value.compareTo(currVal) * c < 0) {
+
+            if(predicate.getOperator().equals("<")) {
+                ListIterator<Cell> iterator = data.listIterator();
+                while(iterator.hasNext()) {
+                    Cell currVal = iterator.next();
                     BNode next = readBNode(links.get(iterator.previousIndex()));
                     if(next != null) next.searchRange(table, predicate);
-                    moveValue(table, iterator);
-                    lastEqual = true;
-                } else {
-                    if(lastEqual) {
-                        BNode next = readBNode(links.get(iterator.previousIndex()));
-                        if(next != null) next.searchRange(table, predicate);
+                    if(currVal.compareTo(value) < 0) {
+                        moveValue(table, iterator.previousIndex());
+                    } else {
+                        break;
                     }
-                    lastEqual = false;
+                }
+                if(iterator.previous().compareTo(value) < 0) {
+                    BNode next = readBNode(links.get(iterator.nextIndex()));
+                    if(next != null) next.searchRange(table, predicate);
+                }
+            } else {
+                ListIterator<Cell> iterator = data.listIterator(data.size());
+                while(iterator.hasPrevious()) {
+                    Cell currVal = iterator.previous();
+                    BNode next = readBNode(links.get(iterator.nextIndex()+1));
+                    if(next != null) next.searchRange(table, predicate);
+                    if(currVal.compareTo(value) > 0) {
+                        moveValue(table, iterator.nextIndex());
+                    } else {
+                        break;
+                    }
+                }
+                if(iterator.next().compareTo(value) > 0) {
+                    BNode next = readBNode(links.get(iterator.previousIndex()));
+                    if(next != null) next.searchRange(table, predicate);
                 }
             }
-            if(lastEqual) {
-                BNode next = readBNode(links.get(iterator.nextIndex()));
-                if(next != null) next.searchRange(table, predicate);
-            }
+
+//
+//            ListIterator<Cell> iterator = data.listIterator();
+//            Integer c = predicate.getOperator().equals("<") ? 1 : -1;
+//            Cell value;
+//            try{
+//                value = predicate.getColumn().createCell(predicate.getValue().toString());
+//            }catch(Exception e) { return; }
+//            boolean lastEqual = false;
+//            if(predicate.getOperator().equals("<") && iterator.next().compareTo(value) < 0) {
+//                BNode next = readBNode(links.get(iterator.previousIndex()));
+//                if(next != null) next.searchRange(table, predicate);
+//                iterator.previous();
+//            }
+//            while (iterator.hasNext()) {
+//                Cell currVal = iterator.next();
+//                if(currVal.compareTo(value) * c < 0) {
+//                    BNode next = readBNode(links.get(iterator.previousIndex()));
+//                    if(next != null) next.searchRange(table, predicate);
+//                    moveValue(table, iterator);
+//                    lastEqual = true;
+//                } else {
+//                    if(lastEqual) {
+//                        BNode next = readBNode(links.get(iterator.previousIndex()));
+//                        if(next != null) next.searchRange(table, predicate);
+//                    }
+//                    lastEqual = false;
+//                }
+//            }
+//            if(lastEqual || (predicate.getOperator().equals(">") && iterator.previous().compareTo(value) < 0)) {
+//                if(iterator.hasNext()) iterator.next();
+//                BNode next = readBNode(links.get(iterator.nextIndex()));
+//                if(next != null) next.searchRange(table, predicate);
+//            }
         }
     }
 
@@ -259,19 +323,24 @@ public class BTree {
     }
 
     private BNode readBNode(Pointer pointer) {
-        DataPage page = bufferManager.getPage((pointer.getPointer()-1));
+        if(pointer == null ) return null;
+        Page page = bufferManager.getPage((pointer.getPointer()-1));
         if(page == null) return null;
         LinkedList<Cell> data = new LinkedList<>();
         List<Pointer> links = new ArrayList<>();
         List<PagePointer> pointers = new ArrayList<>();
 
-        List<Row> rows = page.toRows(schema);
-        for(int i = 0; i < rows.size()-1; i++) {
-            links.add((Pointer) rows.get(i).getCells().get(0));
-            data.add(rows.get(i).getCells().get(1));
-            pointers.add((PagePointer) rows.get(i).getCells().get(2));
+        if(page.getRecordCount() > 0) {
+            List<Row> rows = page.toRows(schema);
+            for(int i = 0; i < rows.size()-1; i++) {
+                Pointer p = (Pointer) rows.get(i).getCells().get(0);
+                links.add(p.getPointer() == 0 ? null : p);
+                data.add(rows.get(i).getCells().get(1));
+                pointers.add((PagePointer) rows.get(i).getCells().get(2));
+            }
+            Pointer p = (Pointer) rows.get(rows.size()-1).getCells().get(0);
+            links.add(p.getPointer() == 0 ? null : p);
         }
-        links.add((Pointer) rows.get(rows.size()-1).getCells().get(0));
         return new BNode(data, links, pointers, pointer, page);
     } // Nullable
 

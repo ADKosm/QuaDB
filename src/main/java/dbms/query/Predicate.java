@@ -20,6 +20,9 @@ public class Predicate {
     private Object leftValue;
     private Object rightValue;
 
+    private Object lval;
+    private Object rval;
+
     public Predicate(String operator) {
         this.operator = operator;
         switch (operator) {
@@ -35,15 +38,17 @@ public class Predicate {
         }
     }
 
+    // TODO: refactor
+
     public Column getColumn() {
-        if(leftValue instanceof Column) return (Column) leftValue;
-        if(rightValue instanceof Column) return (Column) rightValue;
+        if(lval instanceof Column) return (Column) lval;
+        if(rval instanceof Column) return (Column) rval;
         return null;
     }
 
     public Object getValue() {
-        if(leftValue instanceof Column && !(rightValue instanceof Column)) return (Column) rightValue;
-        if(rightValue instanceof Column && !(leftValue instanceof Column)) return (Column) leftValue;
+        if(lval instanceof Column && !(rval instanceof Column)) return rval;
+        if(rval instanceof Column && !(lval instanceof Column)) return lval;
         return null;
     }
 
@@ -52,6 +57,8 @@ public class Predicate {
     }
 
     public void setAgruments(Object lvalue, Object rvalue, TableSchema schema) throws Exception{
+        lval = lvalue;
+        rval = rvalue;
         if(lvalue instanceof Column) {
             leftColumn = true;
             leftValue = (Integer) schema.getColumns().indexOf((Column) lvalue);

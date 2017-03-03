@@ -1,5 +1,6 @@
 package dbms.schema;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,7 +10,7 @@ public abstract class Schema {
     private String schemaFilePath;
     private String dataFilePath;
     private String tableName;
-    protected List<Column> columns;
+    protected List<Column> columns = new ArrayList<>();
 
 
     public void setDataFilePath(String dataFilePath) {

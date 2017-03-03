@@ -6,6 +6,7 @@ import dbms.schema.Row;
 import dbms.schema.Schema;
 import dbms.schema.TableSchema;
 import dbms.schema.dataTypes.Cell;
+import dbms.schema.dataTypes.Int;
 import dbms.schema.dataTypes.PagePointer;
 
 import java.nio.MappedByteBuffer;
@@ -32,25 +33,35 @@ import java.util.List;
  * is very expensive
  */
 
-public class DataPage extends Page {
+public class Page {
     private Integer freeSpace;
     private Integer recordCount;
     private Integer shiftTable = 2 * 4; // 2 * sizeof(int) = position of shift table
 
     private MappedByteBuffer buffer;
 
-    public DataPage(MappedByteBuffer b) {
+    public Page(MappedByteBuffer b, boolean clear) {
         buffer = b;
-        recordCount = 0;
-        freeSpace = Consts.BLOCK_SIZE - 4 - 4 - 1;
-        //  Free space = DataPage size - |Free space| - |Record count| - |zero|
-        buffer.putInt(freeSpace);
-        buffer.putInt(recordCount);
+        if(clear) {
+            recordCount = 0;
+            freeSpace = Consts.BLOCK_SIZE - 4 - 4 - 1;
+            //  Free space = Page size - |Free space| - |Record count| - |zero|
+            buffer.putInt(freeSpace);
+            buffer.putInt(recordCount);
 
-        while(buffer.remaining() > 0) buffer.put((byte) 0); // clear page
+            while (buffer.remaining() > 0) buffer.put((byte) 0); // clear page
 
-        buffer.position(0);
+            buffer.position(0);
+        } else {
+            freeSpace = buffer.getInt();
+            recordCount = buffer.getInt();
+        }
     }
+
+    public Integer getRecordCount() {
+        return recordCount;
+    }
+
 
     public Row getRow(Short offset, Schema schema) {
         try {
@@ -116,6 +127,7 @@ public class DataPage extends Page {
         buffer.position(0);
         buffer.putInt(freeSpace);
         buffer.putInt(recordCount);
+        buffer.force();
         return newPosition;
     }
 
@@ -123,7 +135,7 @@ public class DataPage extends Page {
         buffer.position(0);
         recordCount = 0;
         freeSpace = Consts.BLOCK_SIZE - 4 - 4 - 1;
-        //  Free space = DataPage size - |Free space| - |Record count| - |zero|
+        //  Free space = Page size - |Free space| - |Record count| - |zero|
         buffer.putInt(freeSpace);
         buffer.putInt(recordCount);
 

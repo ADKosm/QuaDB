@@ -33,11 +33,28 @@ public class QueryPlan {
 
                 buildInsertPlan(values, tableName);
             }
+        } else if(Pattern.matches("delete from [a-z0-9]+( where .+)*", query)) {
+            Matcher m = Pattern.compile("delete from ([a-z0-9]+)( where (.+))*").matcher(query);
+            if(m.find()) {
+                String tableName = m.group(1);
+                String rawPredicate = m.group(3) == null ? "True" : m.group(3);
+
+                buildDeletePlan(rawPredicate, tableName);
+            }
         }
     }
 
     public List<Object> getPlan() {
         return plan;
+    }
+
+    private void buildDeletePlan(String rawPredicate, String tableName) {
+        buildSelectPlan(rawPredicate, tableName);
+
+        Table table = storageManager.getTable(tableName);
+        plan.add(table);
+
+        plan.add(new DeleteOperation());
     }
 
     private void buildSelectPlan(String rawPredicate, String tableName) {

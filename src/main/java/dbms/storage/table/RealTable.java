@@ -99,6 +99,12 @@ public class RealTable implements TableImplementation {
     }
 
     @Override
+    public void remove(Row row) {
+        PagePointer pointer  = row.getPagePointer();
+        bufferManager.getPage(pointer.getIndex()).removeRow(pointer.getOffset(), schema);
+    }
+
+    @Override
     public Iterator<Row> iterator() {
         return new RealTableIterator();
     }

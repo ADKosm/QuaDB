@@ -1,12 +1,14 @@
 package dbms.schema;
 
 import dbms.schema.dataTypes.Cell;
+import dbms.schema.dataTypes.PagePointer;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class Row {
     private List<Cell> cells;
+    private PagePointer pagePointer;
 
     public Row(List<Cell> c) {
         cells = c;
@@ -39,5 +41,13 @@ public class Row {
             result = result && (cells.get(i).compareTo(other.getCells().get(i)) == 0);
         }
         return result; // TODO: add primary key and compare by it
+    }
+
+    public PagePointer getPagePointer() {
+        return pagePointer;
+    }
+
+    public void setPagePointer(PagePointer pagePointer) {
+        this.pagePointer = pagePointer;
     }
 }

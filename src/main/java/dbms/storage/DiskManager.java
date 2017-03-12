@@ -18,7 +18,7 @@ public class DiskManager {
         if(m.find()) {
             try{
                 String filePath = m.group(1);
-                Integer pageIndex = Integer.parseInt(m.group(2));
+                Long pageIndex = Long.parseLong(m.group(2));
 
                 RandomAccessFile file = new RandomAccessFile(filePath, "rw");
 
@@ -30,6 +30,7 @@ public class DiskManager {
                         file.getChannel().map(FileChannel.MapMode.READ_WRITE,
                                 pageIndex * Consts.BLOCK_SIZE,
                                 Consts.BLOCK_SIZE),
+                        pageIndex,
                         false
                 );
                 return page;
@@ -56,7 +57,7 @@ public class DiskManager {
         try {
             if(m.find()) {
                     String filePath = m.group(1);
-                    Integer pageIndex = Integer.parseInt(m.group(2));
+                    Long pageIndex = Long.parseLong(m.group(2));
 
                     RandomAccessFile file = new RandomAccessFile(filePath, "rw");
 
@@ -64,6 +65,7 @@ public class DiskManager {
                             file.getChannel().map(FileChannel.MapMode.READ_WRITE,
                                     pageIndex * Consts.BLOCK_SIZE,
                                     Consts.BLOCK_SIZE),
+                            pageIndex,
                             true
                     );
 

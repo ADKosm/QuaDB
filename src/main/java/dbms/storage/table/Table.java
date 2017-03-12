@@ -76,7 +76,13 @@ public class Table {
         return implementation.iterator();
     }
 
+    public void remove(Row row) {
+        implementation.remove(row);
+    }
+
     public PagePointer add(Row row) {
+        if(row == null) return null;
+
         if(isVirtual) {
             usedVirtualMemory += row.getRowSize();
             if(usedVirtualMemory > maxVirtualMemory) storeTable();

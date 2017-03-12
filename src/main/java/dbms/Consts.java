@@ -23,7 +23,8 @@ public final class Consts {
                     Pattern.compile("describe table [a-z0-9]+"));
     public static final List<Pattern> QUERY_COMMANDS =
             Arrays.asList(Pattern.compile("select [a-z0-9\\*,]+ from [a-z0-9]+( where .+)*"),
-                    Pattern.compile("insert into [a-zA-Z0-9]+ values \\(.+\\)"));
+                    Pattern.compile("insert into [a-zA-Z0-9]+ values \\(.+\\)"),
+                    Pattern.compile("delete from [a-z0-9]+( where .+)*"));
 
     public static final int CONTROL_COMMAND = 0;
     public static final int DDL_COMMAND = 1;

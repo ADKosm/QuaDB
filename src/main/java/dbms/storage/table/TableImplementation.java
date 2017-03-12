@@ -15,5 +15,7 @@ public interface TableImplementation {
     PagePointer add(Row row);
     void addAll(List<Row> rows);
 
+    void remove(Row row);
+
     void clear();
 }

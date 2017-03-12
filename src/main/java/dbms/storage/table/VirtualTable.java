@@ -38,6 +38,11 @@ public class VirtualTable implements TableImplementation {
     }
 
     @Override
+    public void remove(Row row) {
+        rows.remove(row);
+    }
+
+    @Override
     public void clear() {
         // nothing
     }

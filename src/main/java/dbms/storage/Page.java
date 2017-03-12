@@ -38,10 +38,13 @@ public class Page {
     private Integer recordCount;
     private Integer shiftTable = 2 * 4; // 2 * sizeof(int) = position of shift table
 
+    private Long pageIndex;
+
     private MappedByteBuffer buffer;
 
-    public Page(MappedByteBuffer b, boolean clear) {
+    public Page(MappedByteBuffer b, Long index, boolean clear) {
         buffer = b;
+        pageIndex = index;
         if(clear) {
             recordCount = 0;
             freeSpace = Consts.BLOCK_SIZE - 4 - 4 - 1;
@@ -62,6 +65,12 @@ public class Page {
         return recordCount;
     }
 
+    public void removeRow(Short offset, Schema schema) {
+        try {
+            buffer.position(offset);
+            buffer.put((byte)0);
+        }catch (Exception e) {e.fillInStackTrace();}
+    }
 
     public Row getRow(Short offset, Schema schema) {
         try {
@@ -73,7 +82,9 @@ public class Page {
             for(Column column : schema.getColumns()) {
                 cells.add(column.readCell(buffer));
             }
-            return new Row(cells);
+            Row row = new Row(cells);
+            row.setPagePointer(new PagePointer(pageIndex, offset));
+            return row;
         } catch (Exception e ){ e.fillInStackTrace(); return null; }
     }
 
@@ -90,7 +101,9 @@ public class Page {
                 for(Column column : schema.getColumns()) {
                     cells.add(column.readCell(buffer));
                 }
-                rows.add(new Row(cells));
+                Row row = new Row(cells);
+                row.setPagePointer(new PagePointer(pageIndex, pos));
+                rows.add(row);
             }
             buffer.position(shiftTable);
             return rows;

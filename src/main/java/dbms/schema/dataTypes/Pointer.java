@@ -39,4 +39,8 @@ public class Pointer implements Cell {
     public Long getPointer() {
         return pointer;
     }
+
+    public boolean equals(Pointer obj) {
+        return pointer.equals(obj.pointer);
+    }
 }

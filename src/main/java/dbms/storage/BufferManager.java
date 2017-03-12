@@ -11,7 +11,8 @@ import java.util.function.Function;
 public class BufferManager {
     private Schema schema;
 
-    private HashMap<String, Page> bufferTable = new HashMap<String, Page>();
+//    private HashMap<String, Page> bufferTable = new HashMap<String, Page>(); // TODO: replace with BufferedStorage
+    private BufferedStorage<String, Page> bufferTable = new BufferedStorage<>();
     private DiskManager diskManager = new DiskManager();
 
     public BufferManager(Schema schema) {
@@ -23,11 +24,11 @@ public class BufferManager {
     }
 
     public boolean isBuffered(Long offset) {
-        return this.bufferTable.containsKey(toPageId(offset));
+        return this.bufferTable.contains(toPageId(offset));
     }
 
     public void bufferPage(Long offset, Page page) {
-        this.bufferTable.put(toPageId(offset), page);
+        this.bufferTable.add(toPageId(offset), page);
     }
 
     public Page getPage(Long offset) { // use long for offsets

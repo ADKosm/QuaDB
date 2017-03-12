@@ -3,6 +3,9 @@ package dbms;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import dbms.schema.Schema;
+import dbms.schema.SchemaManager;
 import dbms.transaction.TransactionManager;
 import dbms.query.QueryManager;
 
@@ -14,7 +17,8 @@ public class Server {
 
     private Integer portNumber;
 
-    private TransactionManager transactionManager = null;
+    private TransactionManager transactionManager = TransactionManager.getInstance();
+    private SchemaManager schemaManager = SchemaManager.getInstance();
 
 
     public Server(Integer portNumber){
@@ -24,6 +28,7 @@ public class Server {
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(portNumber);) {
             System.out.println("dbms.Server started. Listening on Port " +  portNumber);
+            transactionManager.recoverDB();
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 RequestHandler worker = new RequestHandler(clientSocket);

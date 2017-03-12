@@ -4,6 +4,7 @@ import dbms.command.CommandManager;
 import dbms.command.CommandResult;
 import dbms.query.QueryManager;
 import dbms.schema.SchemaManager;
+import dbms.transaction.TransactionManager;
 
 import java.io.*;
 import java.net.Socket;
@@ -23,6 +24,7 @@ public class RequestHandler {
 
             CommandManager commandManager;
             SchemaManager schemaManager = SchemaManager.getInstance();
+            TransactionManager transactionManager = TransactionManager.getInstance();
             QueryManager queryManager = new QueryManager();
 
             CommandResult commandResult;
@@ -58,6 +60,15 @@ public class RequestHandler {
                         userResponse = Consts.MESSAGE_WARNING_INVALID_QUERY + userInput;
                         writer.write(userResponse);
                         System.out.println("Sent to client" + Thread.currentThread().getName() + ": " + userResponse);
+                    }
+                } else if (commandManager.getCommandType() == Consts.TRANSACTION_COMMAND){
+                    commandResult = transactionManager.executeCommand(userInput);
+                    if (commandResult.getStatus() == Consts.STATUS_COMMAND_OK) {
+                        writer.write(commandResult.toConsoleString());
+                    } else {
+                        userResponse = Consts.MESSAGE_WARNING_INVALID_QUERY + userInput;
+                        writer.write(userResponse);
+                        System.out.println("Sent to client:" + Thread.currentThread().getName() + ": " + userResponse);
                     }
                 } else {
                     userResponse = Consts.MESSAGE_WARNING_UNKNOWN_COMMAND + userInput;

@@ -30,6 +30,12 @@ public class CommandManager {
                 break;
             }
         }
+        for(Pattern pattern : Consts.TRANSACTION_COMMANDS) {
+            if(pattern.matcher(this.command).matches()) {
+                this.commandStatus = Consts.TRANSACTION_COMMAND;
+                break;
+            }
+        }
     }
 
     public int getCommandType(){

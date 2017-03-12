@@ -71,7 +71,7 @@ public class SchemaManager { // TODO: доделать
         this.tempRoot = this.shemaRoot + "/.qua_temp";
         this.indexRoot = this.shemaRoot + "/indexes";
 
-        for(String dir : Arrays.asList(this.tempRoot, this.indexRoot)){
+        for(String dir : Arrays.asList(this.tempRoot, this.indexRoot, Consts.TRANSACTION_PATH)){
             File tempDir = new File(dir);
             if(!tempDir.exists()) {
                 try {

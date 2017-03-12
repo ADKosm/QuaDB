@@ -6,6 +6,7 @@ import dbms.schema.Column;
 import dbms.schema.Row;
 import dbms.schema.dataTypes.PagePointer;
 import dbms.storage.table.Table;
+import dbms.transaction.TransactionManager;
 
 import java.util.List;
 import java.util.Stack;
@@ -18,6 +19,8 @@ import java.util.Stack;
  * Stack: |values|table|<top>
  */
 public class InsertOperation implements Operation {
+    TransactionManager transactionManager = TransactionManager.getInstance();
+
     @Override
     public void compute(Computator computator) {
         try{
@@ -35,6 +38,8 @@ public class InsertOperation implements Operation {
                     index.add(row, pointer);
                 }
             }
+
+            transactionManager.insertValues(pointer, table);
 
             Table tableWithInsertValue = new Table(table.getSchema());
             tableWithInsertValue.add(row);

@@ -53,16 +53,11 @@ public class RequestHandler {
                         System.out.println("Sent to client" + Thread.currentThread().getName() + ": " + userResponse);
                     }
                 } else if (commandManager.getCommandType() == Consts.DML_COMMAND) {
-                    commandResult = queryManager.executeCommand(userInput);
-                    if (commandResult.getStatus() == Consts.STATUS_COMMAND_OK) {
-                        writer.write(commandResult.toConsoleString());
-                    } else {
-                        userResponse = Consts.MESSAGE_WARNING_INVALID_QUERY + userInput;
-                        writer.write(userResponse);
-                        System.out.println("Sent to client" + Thread.currentThread().getName() + ": " + userResponse);
-                    }
+                    transactionManager.registerQuery(userInput);
+                    userResponse = "Continue enter queries";
+                    writer.write(userResponse);
                 } else if (commandManager.getCommandType() == Consts.TRANSACTION_COMMAND){
-                    commandResult = transactionManager.executeCommand(userInput);
+                    commandResult = transactionManager.executeCommand(userInput, writer);
                     if (commandResult.getStatus() == Consts.STATUS_COMMAND_OK) {
                         writer.write(commandResult.toConsoleString());
                     } else {
@@ -76,9 +71,12 @@ public class RequestHandler {
                     System.out.println("Sent to client" + Thread.currentThread().getName() + ": " + userResponse);
                 }
                 writer.newLine();
-                writer.flush();
+                try{
+                    writer.flush();
+                } catch (Exception e) {
+                    e.fillInStackTrace();
+                }
             }
-
             return 0;
         } catch (IOException e) {
             System.out.println("I/O exception: " + e);

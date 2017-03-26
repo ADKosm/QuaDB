@@ -1,5 +1,7 @@
 package dbms;
 
+import dbms.schema.dataTypes.Int;
+
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +37,9 @@ public final class Consts {
                     Pattern.compile("begin"),
                     Pattern.compile("commit")
             );
+
+    public static final Integer SHARED_LOCK = 0;
+    public static final Integer EXCLUSIVE_LOCK = 1;
 
     public static final int CONTROL_COMMAND = 0;
     public static final int DDL_COMMAND = 1;

@@ -13,6 +13,8 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by alex on 27.02.17.
@@ -34,6 +36,9 @@ public class Table {
 
     private Integer usedVirtualMemory = 0;
     private Integer maxVirtualMemory = Consts.MAX_MEMORY_USED;
+
+    private ReentrantLock mutex = new ReentrantLock();
+    private Condition condition = mutex.newCondition();
 
     public Table(TableSchema schema) { // anonimus table without name. Begin with virtual sroting
         this.schema = new TableSchema(schema.getColumns());
@@ -116,5 +121,27 @@ public class Table {
 
     public TableSchema getSchema() {
         return schema;
+    }
+
+    public void waitForUnlock() {
+        try{
+            mutex.lock();
+            condition.await();
+            mutex.unlock();
+        } catch (Exception e) {
+            e.fillInStackTrace();
+            System.out.println("Cant wait for unlock");
+        }
+    }
+
+    public void notifyOne() {
+        try{
+            mutex.lock();
+            condition.signal();
+            mutex.unlock();
+        } catch (Exception e) {
+            e.fillInStackTrace();
+            System.out.println("Cant notify one");
+        }
     }
 }

@@ -49,3 +49,18 @@ Query example: ``delete from abc where id < 10``
 
 Result: remove all records, which id is less then 10
 
+##### Now all transactions run paralelly
+
+So, you can open many telnets and concurrently run transactions.
+
+You must begin transaction with `begin`, after that you should write all queries in current transaction (note: you don't see any results, before you commit transaction).
+To compute transaction and commit it, write `commit`.
+
+To test this mechanism, you can run `ruby insert.rb`. This script runs 200 transactions with insertions concurrently, so after some seconds, all insertions will be correctly applied.
+To check, open telnet and run select transaction:
+
+```$xslt
+begin
+select * from abc
+commit
+```
